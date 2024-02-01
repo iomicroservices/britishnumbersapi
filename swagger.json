@@ -167,8 +167,7 @@
       },
       "required": ["email", "numbers"]
     }
-  }
-},
+  },
   "securityDefinitions": {
     "basicAuth": {
       "type": "basic"
