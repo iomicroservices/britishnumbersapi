@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "description": "The British Numbers API simplifies the search and purchase of UK telephone and mobile numbers, enabling seamless integration and efficient acquisition for partners.",
+    "description": "The British Numbers API gives you access to millions of UK phone and mobile numbers. It's designed to make finding and buying numbers easy and straightforward for our partners.",
     "version": "1.0.0",
     "title": "British Numbers API",
     "termsOfService": "https://api.britishnumbers.co.uk/terms-of-service",
@@ -18,7 +18,11 @@
   "tags": [
     {
       "name": "Mobile Numbers",
-      "description": "Search and purchase available UK mobile numbers"
+      "description": "Search and purchase mobile numbers available in the UK."
+    },
+    {
+      "name": "Telephone Numbers",
+      "description": "Search and purchase telephone numbers available in the UK."
     }
   ],
   "schemes": ["https"],
@@ -26,8 +30,8 @@
     "/mobile/memorable": {
       "get": {
         "tags": ["Mobile Numbers"],
-        "summary": "Search for memorable mobile numbers",
-        "description": "Allows clients to search for memorable mobile numbers based on various criteria.",
+        "summary": "Search our database of memorable mobile numbers",
+        "description": "Explore a vast selection of memorable mobile numbers with our search feature. Tailor search queries using specific criteria to find the perfect, easy-to-remember mobile numbers for your needs.",
         "operationId": "findMemorableNumbers",
         "consumes": ["application/json"],
         "produces": ["application/json"],
@@ -35,14 +39,14 @@
           {
             "name": "search",
             "in": "query",
-            "description": "Your search query",
+            "description": "Your search query, consisting of numbers/integers, used to find specific memorable mobile numbers",
             "required": true,
             "type": "string"
           },
           {
             "name": "type",
             "in": "query",
-            "description": "Determines which fields to search on. Defaults to 'number'.",
+            "description": "Determines the target field for your search. By default, set to 'number', which searches across the entire mobile number for matches.",
             "required": false,
             "type": "string",
             "enum": ["number", "prefix", "last_six"]
@@ -50,7 +54,7 @@
           {
             "name": "match",
             "in": "query",
-            "description": "Determine if you want an exact match. Defaults to a fuzzy match.",
+            "description": "Specifies the match type: select 'exact' for precise matching. Without this, the search performs a fuzzy match.",
             "required": false,
             "type": "string",
             "enum": ["exact"]
@@ -72,7 +76,7 @@
           {
             "name": "range",
             "in": "query",
-            "description": "Select the range you wish to retrieve, format 'start-end'.",
+            "description": "Defines the subset of results for pagination, specifying the range with a 'start-end' format. Max 100 results per query.",
             "required": false,
             "type": "string"
           }
@@ -90,8 +94,8 @@
     "/mobile/purchase": {
       "post": {
         "tags": ["Mobile Numbers"],
-        "summary": "Submit a purchase request for one or more mobile numbers",
-        "description": "Submit a request to purchase UK mobile numbers.",
+        "summary": "Submit a purchase request for UK mobile numbers",
+        "description": "Submit a purchase request to buy one or more selected UK mobile numbers directly through the API.",
         "operationId": "purchaseNumbers",
         "consumes": ["application/x-www-form-urlencoded"],
         "produces": ["application/json"],
@@ -128,8 +132,8 @@
     "/mobile/custom": {
       "post": {
         "tags": ["Mobile Numbers"],
-        "summary": "Custom operation for mobile numbers",
-        "description": "Perform a custom operation related to mobile numbers.",
+        "summary": "Create a custom UK mobile number",
+        "description": "Request custom or specific UK mobile numbers, offering solutions for both unique requirements and situations where preferred mobile numbers are unavailable in the /memorable endpoint.",
         "operationId": "customOperation",
         "consumes": ["application/json"],
         "produces": ["application/json"],
@@ -137,14 +141,14 @@
           {
             "name": "request",
             "in": "query",
-            "description": "The query consisting of 6 or 7 numbers",
+            "description": "Specify 6 digits to appear at the end of the desired mobile number.",
             "required": true,
             "type": "string"
           },
           {
             "name": "email",
             "in": "query",
-            "description": "Contact email",
+            "description": "Enter your email",
             "required": true,
             "type": "string",
             "format": "email"
@@ -152,21 +156,14 @@
           {
             "name": "name",
             "in": "query",
-            "description": "Contact name",
+            "description": "Enter your name",
             "required": true,
             "type": "string"
           },
           {
             "name": "contact",
             "in": "query",
-            "description": "Contact numbers",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "source",
-            "in": "query",
-            "description": "Where the request is coming from",
+            "description": "Enter your phone number",
             "required": true,
             "type": "string"
           }
