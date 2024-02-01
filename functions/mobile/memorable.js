@@ -13,9 +13,9 @@ async function handleRequest(request) {
   const type = params.get('type') || 'number';
   const match = params.get('match') || null;
   const range = params.get('range') || '0-99';
-  const price_lte = params.get('price_lte') || null,
-  const price_gte = params.get('price_gte') || null,
-  const search = params.get('search') || null,
+  const price_lte = params.get('price_lte') || null;
+  const price_gte = params.get('price_gte') || null;
+  const search = params.get('search') || null;
 
   // Building the query
   let query = supabase.from('mobile_numbers').select("*");
