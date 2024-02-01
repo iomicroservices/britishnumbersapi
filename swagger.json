@@ -134,42 +134,42 @@
         "consumes": ["application/json"],
         "produces": ["application/json"],
         "parameters": [
-      {
-        "name": "request",
-        "in": "query",
-        "description": "The query consisting of 6 or 7 numbers",
-        "required": true,
-        "type": "string"
-      },
-      {
-        "name": "email",
-        "in": "query",
-        "description": "Contact email",
-        "required": true,
-        "type": "string",
-        "format": "email"
-      },
-      {
-        "name": "name",
-        "in": "query",
-        "description": "Contact name",
-        "required": true,
-        "type": "string"
-      },
-      {
-        "name": "contact",
-        "in": "query",
-        "description": "Contact numbers",
-        "required": true,
-        "type": "string" // Note: There's no specific 'phone number' type in Swagger 2.0, use 'string' and validate format server-side if needed.
-      },
-      {
-        "name": "source",
-        "in": "query",
-        "description": "Where the request is coming from",
-        "required": true,
-        "type": "string"
-      }
+          {
+            "name": "request",
+            "in": "query",
+            "description": "The query consisting of 6 or 7 numbers",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "description": "Contact email",
+            "required": true,
+            "type": "string",
+            "format": "email"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Contact name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "contact",
+            "in": "query",
+            "description": "Contact numbers",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "Where the request is coming from",
+            "required": true,
+            "type": "string"
+          }
         ],
         "responses": {
           "200": {
@@ -187,6 +187,7 @@
       "type": "basic"
     }
   },
+  "definitions": { // Corrected comma placement here
     "MemorableNumber": {
       "type": "object",
       "properties": {
