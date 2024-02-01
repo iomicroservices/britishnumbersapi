@@ -40,7 +40,7 @@
             "name": "search",
             "in": "query",
             "description": "Your search query",
-            "required": false,
+            "required": true,
             "type": "string"
           },
           {
