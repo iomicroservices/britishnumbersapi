@@ -130,6 +130,11 @@
       }
     }
   },
+  "securityDefinitions": {
+    "basicAuth": {
+      "type": "basic"
+    }
+  },
   "definitions": {
     "MemorableNumber": {
       "type": "object",
@@ -161,16 +166,11 @@
           "type": "array",
           "description": "List of numbers to purchase.",
           "items": {
-            "$ref": "#/definitions/MemorableNumber"
+            "type": "string"
           }
         }
       },
       "required": ["email", "numbers"]
-    }
-  },
-  "securityDefinitions": {
-    "basicAuth": {
-      "type": "basic"
     }
   }
 }
