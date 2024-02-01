@@ -94,7 +94,7 @@
     "/mobile/purchase": {
       "post": {
         "tags": ["Mobile Numbers"],
-        "summary": "Submit a purchase request for UK mobile numbers",
+        "summary": "Buy UK mobile numbers",
         "description": "Submit a purchase request to buy one or more selected UK mobile numbers directly through the API.",
         "operationId": "purchaseNumbers",
         "consumes": ["application/x-www-form-urlencoded"],
@@ -103,14 +103,14 @@
           {
             "name": "email",
             "in": "formData",
-            "description": "Your email address for correspondence.",
+            "description": "Billing email address.",
             "required": true,
             "type": "string"
           },
           {
             "name": "number",
             "in": "formData",
-            "description": "The number(s) you wish to purchase. Can include multiple numbers.",
+            "description": "The number(s) you wish to purchase. Multiple numbers supported by repeating the query parametre.",
             "required": true,
             "type": "array",
             "items": {
