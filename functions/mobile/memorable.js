@@ -17,30 +17,27 @@ async function handleRequest(request) {
   const price_gte = params.get('price_gte') || null;
   const search = params.get('search') || null;
 
-  // Building the query
-  let query = supabase.from('mobile_numbers').select("*");
+// Initialize query with base conditions
+let query = supabase.from('mobile_numbers').select("*").eq('available', true);
 
-  if (type) {
-    query = query.eq('type', type);
+  // Apply search condition based on the 'match' parameter
+  if (search) {
+    if (match === 'exact') {
+      // Use 'eq' for exact match on a specific field, assuming 'description' as the field to search
+      query = query.eq('description', search);
+    } else {
+      // Use 'ilike' for case-insensitive partial match
+      query = query.ilike('description', `%${search}%`);
+    }
   }
-  if (match) {
-    query = query.eq('match', match);
-  }
-  if (range) {
-    // Assuming range is a specific field, you might need to adjust the logic here
-    query = query.eq('range', range);
-  }
+  
+  // Apply price filters if provided
   if (price_lte) {
     query = query.lte('price', price_lte);
   }
   if (price_gte) {
     query = query.gte('price', price_gte);
   }
-  if (search) {
-    // Assuming 'search' applies to a text field like 'description'. Adjust field name as necessary.
-    query = query.ilike('description', `%${search}%`);
-  }
-
   try {
     let { data: mobile_numbers, error } = await query;
 
