@@ -1,0 +1,122 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "British Numbers API",
+    "description": "API for querying and purchasing British memorable phone numbers.",
+    "version": "1.0.0"
+  },
+  "host": "api.britishnumbers.co.uk",
+  "schemes": ["https"],
+  "basePath": "/",
+  "securityDefinitions": {
+    "basicAuth": {
+      "type": "basic"
+    }
+  },
+  "paths": {
+    "/memorable": {
+      "get": {
+        "summary": "Retrieve memorable phone numbers",
+        "description": "Allows clients to search for memorable phone numbers based on various criteria.",
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Your search query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Determines which fields to search on. Defaults to 'number' if left blank.",
+            "required": false,
+            "type": "string",
+            "enum": ["number", "prefix", "last_six"]
+          },
+          {
+            "name": "match",
+            "in": "query",
+            "description": "Determine if you want an exact match. Defaults to a fuzzy match if left blank.",
+            "required": false,
+            "type": "string",
+            "enum": ["exact"]
+          },
+          {
+            "name": "price_gte",
+            "in": "query",
+            "description": "Filter by price (greater than or equal to).",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "price_lte",
+            "in": "query",
+            "description": "Filter by price (less than or equal to).",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "description": "Select the range you wish to retrieve, format 'start-end'. Max 100 records.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of memorable phone numbers."
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/purchase": {
+      "post": {
+        "summary": "Submit a purchase request for one or more numbers",
+        "description": "Submit a request to purchase memorable phone numbers.",
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "description": "Your email address for correspondence.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "number",
+            "in": "query",
+            "description": "The number(s) you wish to purchase. Can be repeated for multiple numbers.",
+            "required": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase request submitted successfully."
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    }
+  }
+}
