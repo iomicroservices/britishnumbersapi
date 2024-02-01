@@ -130,6 +130,45 @@
       }
     }
   },
+  "definitions": {
+    "MemorableNumber": {
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "string",
+          "description": "The memorable phone number."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the memorable phone number."
+        },
+        "status": {
+          "type": "string",
+          "description": "Availability status of the number.",
+          "enum": ["available", "pending", "sold"]
+        }
+      },
+      "required": ["number", "status"]
+    },
+    "PurchaseRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Email address for purchase correspondence."
+        },
+        "numbers": {
+          "type": "array",
+          "description": "List of numbers to purchase.",
+          "items": {
+            "$ref": "#/definitions/MemorableNumber"
+          }
+        }
+      },
+      "required": ["email", "numbers"]
+    }
+  }
+},
   "securityDefinitions": {
     "basicAuth": {
       "type": "basic"
