@@ -15,7 +15,7 @@ export async function onRequestPost(context) {
     const webhookData = JSON.stringify({ email, numbers });
 
     // Define the destination URL for the webhook
-    const webhookUrl = 'https://hook.eu1.make.com/c3tkegsanr3xmf2mprdo7v74d0nh0euc';
+    const webhookUrl = context.env.CUSTOM_WEBHOOK_BASE_URL; // Environment variable for the base URL;
 
     try {
         // Send the data to the webhook
