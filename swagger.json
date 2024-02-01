@@ -1,28 +1,40 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "British Numbers API",
     "description": "API for querying and purchasing UK mobile phone numbers.",
-    "version": "1.0.0"
-  },
-  "host": "api.britishnumbers.co.uk",
-  "schemes": ["https"],
-  "basePath": "/",
-  "securityDefinitions": {
-    "basicAuth": {
-      "type": "basic"
+    "version": "1.0.0",
+    "title": "British Numbers API",
+    "termsOfService": "https://api.britishnumbers.co.uk/terms-of-service",
+    "contact": {
+      "email": "info@britishnumbers.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     }
   },
+  "host": "api.britishnumbers.co.uk",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "memorable",
+      "description": "Operations about memorable numbers"
+    },
+    {
+      "name": "purchase",
+      "description": "Operations about purchasing numbers"
+    }
+  ],
+  "schemes": ["https"],
   "paths": {
     "/memorable": {
       "get": {
-        "summary": "Retrieve memorable mobile numbers",
-        "description": "Allows clients to search for memorable mobile numbers based on various criteria.",
-        "security": [
-          {
-            "basicAuth": []
-          }
-        ],
+        "tags": ["memorable"],
+        "summary": "Retrieve memorable phone numbers",
+        "description": "",
+        "operationId": "findMemorableNumbers",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
         "parameters": [
           {
             "name": "search",
@@ -34,7 +46,7 @@
           {
             "name": "type",
             "in": "query",
-            "description": "Determines which fields to search on. Defaults to 'number' if left blank.",
+            "description": "Determines which fields to search on. Defaults to 'number'.",
             "required": false,
             "type": "string",
             "enum": ["number", "prefix", "last_six"]
@@ -42,7 +54,7 @@
           {
             "name": "match",
             "in": "query",
-            "description": "Determine if you want an exact match. Defaults to a fuzzy match if left blank.",
+            "description": "Determine if you want an exact match. Defaults to a fuzzy match.",
             "required": false,
             "type": "string",
             "enum": ["exact"]
@@ -64,42 +76,41 @@
           {
             "name": "range",
             "in": "query",
-            "description": "Select the range you wish to retrieve, format 'start-end'. Max 100 records.",
+            "description": "Select the range you wish to retrieve, format 'start-end'.",
             "required": false,
             "type": "string"
           }
         ],
         "responses": {
           "200": {
-            "description": "A list of memorable mobile numbers."
+            "description": "successful operation"
           },
-          "401": {
-            "description": "Unauthorized"
+          "400": {
+            "description": "Invalid input"
           }
         }
       }
     },
     "/purchase": {
       "post": {
-        "summary": "Submit a purchase request for one or more mobile numbers",
-        "description": "Submit a request to purchase memorable mobile numbers.",
-        "security": [
-          {
-            "basicAuth": []
-          }
-        ],
+        "tags": ["purchase"],
+        "summary": "Submit a purchase request for numbers",
+        "description": "",
+        "operationId": "purchaseNumbers",
+        "consumes": ["application/x-www-form-urlencoded"],
+        "produces": ["application/json"],
         "parameters": [
           {
             "name": "email",
-            "in": "query",
+            "in": "formData",
             "description": "Your email address for correspondence.",
             "required": true,
             "type": "string"
           },
           {
             "name": "number",
-            "in": "query",
-            "description": "The number(s) you wish to purchase. Can be repeated for multiple numbers.",
+            "in": "formData",
+            "description": "The number(s) you wish to purchase. Can include multiple numbers.",
             "required": true,
             "type": "array",
             "items": {
@@ -112,11 +123,16 @@
           "200": {
             "description": "Purchase request submitted successfully."
           },
-          "401": {
-            "description": "Unauthorized"
+          "400": {
+            "description": "Invalid input"
           }
         }
       }
+    }
+  },
+  "securityDefinitions": {
+    "basicAuth": {
+      "type": "basic"
     }
   }
 }
