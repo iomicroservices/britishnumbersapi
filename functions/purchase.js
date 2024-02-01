@@ -15,7 +15,7 @@ export async function onRequestPost(context) {
     const webhookData = JSON.stringify({ email, numbers });
 
     // Define the destination URL for the webhook
-    const webhookUrl = context.env.CUSTOM_WEBHOOK_BASE_URL; // Environment variable for the base URL;
+    const webhookUrl = context.env.PURCHASE_WEBHOOK_BASE_URL; // Environment variable for the base URL;
 
     try {
         // Send the data to the webhook
