@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "description": "API for querying and purchasing UK mobile phone numbers.",
+    "description": "The British Numbers API simplifies the search and purchase of UK telephone and mobile numbers, enabling seamless integration and efficient acquisition for partners.",
     "version": "1.0.0",
     "title": "British Numbers API",
     "termsOfService": "https://api.britishnumbers.co.uk/terms-of-service",
@@ -18,7 +18,7 @@
   "tags": [
     {
       "name": "Mobile Numbers",
-      "description": "Operations for querying and purchasing mobile numbers"
+      "description": "Search and purchase available UK mobile numbers"
     }
   ],
   "schemes": ["https"],
@@ -26,7 +26,7 @@
     "/mobile/memorable": {
       "get": {
         "tags": ["Mobile Numbers"],
-        "summary": "Retrieve memorable phone numbers",
+        "summary": "Search for memorable mobile numbers",
         "description": "Allows clients to search for memorable mobile numbers based on various criteria.",
         "operationId": "findMemorableNumbers",
         "consumes": ["application/json"],
