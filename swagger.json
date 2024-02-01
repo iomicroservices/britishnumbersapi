@@ -203,24 +203,31 @@
     }
   },
   "definitions": {
-    "MemorableNumber": {
+    "MobileNumber": {
       "type": "object",
       "properties": {
         "number": {
           "type": "string",
-          "description": "The memorable phone number."
+          "description": "The mobile phone number."
         },
         "price": {
           "type": "number",
-          "description": "Price of the memorable phone number."
+          "description": "Price of the mobile phone number."
         },
-        "status": {
+        "last_six": {
           "type": "string",
-          "description": "Availability status of the number.",
-          "enum": ["available", "pending", "sold"]
+          "description": "Last six digits of the mobile phone number."
+        },
+        "available": {
+          "type": "boolean",
+          "description": "Availability status of the number."
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix of the mobile phone number."
         }
       },
-      "required": ["number", "status"]
+      "required": ["number", "price", "last_six", "available", "prefix"]
     },
     "PurchaseRequest": {
       "type": "object",
