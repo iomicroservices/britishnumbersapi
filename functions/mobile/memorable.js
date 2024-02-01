@@ -1,60 +1,64 @@
-export async function onRequestGet(request) {
-  const baseURL = context.env.MOBILE_DATABASE_BASE_URL;
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+const supabaseUrl = context.env.MOBILE_DATABASE_BASE_URL;
+const supabaseKey = context.env.MOBILE_DATABASE_API_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function handleRequest(request) {
   const url = new URL(request.url);
-
-  // Extract query parameters from the request
   const params = url.searchParams;
+
+  // Extracting query parameters
   const type = params.get('type') || 'number';
-  const search = params.get('search') || null;
   const match = params.get('match') || null;
-  const priceGte = params.get('price_gte') || null;
-  const priceLte = params.get('price_lte') || null;
   const range = params.get('range') || '0-99';
+  const price_lte = params.get('price_lte') || null,
+  const price_gte = params.get('price_gte') || null,
+  const search = params.get('search') || null,
 
-  // Construct the database API query string
-  let filter = match === 'exact' ? `eq.${search}` : `ilike.%${search}%`;
-  let queryString = `?${type}=${filter}&available=eq.true`;
-  
-  if (priceGte !== null) {
-      queryString += `&price=gte.${priceGte}`;
+  // Building the query
+  let query = supabase.from('mobile_numbers').select("*");
+
+  if (type) {
+    query = query.eq('type', type);
   }
-  if (priceLte !== null) {
-      queryString += `&price=lte.${priceLte}`;
+  if (match) {
+    query = query.eq('match', match);
   }
-
-
-  // Construct the URL for the database API request
-  const databaseURL = `${baseURL}/rest/v1/mobile_numbers?select=*${queryString}`;
+  if (range) {
+    // Assuming range is a specific field, you might need to adjust the logic here
+    query = query.eq('range', range);
+  }
+  if (price_lte) {
+    query = query.lte('price', price_lte);
+  }
+  if (price_gte) {
+    query = query.gte('price', price_gte);
+  }
+  if (search) {
+    // Assuming 'search' applies to a text field like 'description'. Adjust field name as necessary.
+    query = query.ilike('description', `%${search}%`);
+  }
 
   try {
-    // Make an HTTP GET request to the database API
-    const response = await fetch(databaseURL, {
-      method: 'GET',
-      headers: {
-          'apikey': context.env.MOBILE_DATABASE_API_KEY,
-          'Range': ${range}
-          'Prefer': 'count=exact'
-        },
-    });
+    let { data: mobile_numbers, error } = await query;
 
-    // Check if the response is successful
-    if (response.ok) {
-      // Read and return the response body
-      const responseBody = await response.text();
-      return new Response(responseBody, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      });
-    } else {
-      // Handle the case where the database API returns an error
-      return new Response(`Error fetching memorable numbers: ${response.statusText}`, {
-        status: response.status,
-        statusText: response.statusText,
-      });
-    }
+    if (error) throw error;
+
+    return new Response(JSON.stringify(mobile_numbers), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 200,
+    });
   } catch (error) {
-    // Handle any unexpected errors
-    return new Response(`Error fetching memorable numbers: ${error.message}`, { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 }
+
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request));
+});
+
