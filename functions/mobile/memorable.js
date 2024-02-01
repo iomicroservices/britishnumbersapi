@@ -9,6 +9,7 @@ export async function onRequestGet(request) {
   const match = params.get('match') || null;
   const priceGte = params.get('price_gte') || null;
   const priceLte = params.get('price_lte') || null;
+  const range = params.get('range') || '0-99';
 
   // Construct the database API query string
   let filter = match === 'exact' ? `eq.${search}` : `ilike.%${search}%`;
@@ -31,6 +32,8 @@ export async function onRequestGet(request) {
       method: 'GET',
       headers: {
           'apikey': context.env.MOBILE_DATABASE_API_KEY,
+          'Range': ${range}
+          'Prefer': 'count=exact'
         },
     });
 
