@@ -5,27 +5,29 @@ export async function onRequestGet(request) {
   // Extract query parameters from the request
   const params = url.searchParams;
   const type = params.get('type') || 'number';
-  const search = params.get('search') || '';
-  const match = params.get('match') || 'exact';
+  const search = params.get('search') || null;
+  const match = params.get('match') || null;
   const priceGte = params.get('price_gte') || null;
   const priceLte = params.get('price_lte') || null;
 
-  // Construct the Supabase API query string
-  let queryString = `${type}.${match === 'exact' ? 'eq.' + search : 'ilike.*' + search + '*'}`;
-  queryString += `,available.eq.true`;
+  // Construct the database API query string
+  let filter = match === 'exact' ? `eq.${search}` : `ilike.%${search}%`;
+  let queryString = `?${type}=${filter}&available=eq.true`;
+  
   if (priceGte !== null) {
-    queryString += `,price.gte.${priceGte}`;
+      queryString += `&price=gte.${priceGte}`;
   }
   if (priceLte !== null) {
-    queryString += `,price.lte.${priceLte}`;
+      queryString += `&price=lte.${priceLte}`;
   }
 
-  // Construct the URL for the Supabase API request
-  const supabaseURL = `${baseURL}/rest/v1/mobile_numbers?select=*${queryString}`;
+
+  // Construct the URL for the database API request
+  const databaseURL = `${baseURL}/rest/v1/mobile_numbers?select=*${queryString}`;
 
   try {
-    // Make an HTTP GET request to the Supabase API
-    const response = await fetch(supabaseURL, {
+    // Make an HTTP GET request to the database API
+    const response = await fetch(databaseURL, {
       method: 'GET',
       headers: {
           'apikey': context.env.MOBILE_DATABASE_API_KEY,
@@ -42,7 +44,7 @@ export async function onRequestGet(request) {
         headers: response.headers,
       });
     } else {
-      // Handle the case where the Supabase API returns an error
+      // Handle the case where the database API returns an error
       return new Response(`Error fetching memorable numbers: ${response.statusText}`, {
         status: response.status,
         statusText: response.statusText,
