@@ -17,19 +17,15 @@
   "basePath": "/",
   "tags": [
     {
-      "name": "memorable",
-      "description": "Operations about memorable numbers"
-    },
-    {
-      "name": "purchase",
-      "description": "Operations about purchasing numbers"
+      "name": "Mobile Numbers",
+      "description": "Operations for querying and purchasing mobile numbers"
     }
   ],
   "schemes": ["https"],
   "paths": {
-    "/memorable": {
+    "/mobile/memorable": {
       "get": {
-        "tags": ["memorable"],
+        "tags": ["Mobile Numbers"],
         "summary": "Retrieve memorable phone numbers",
         "description": "Allows clients to search for memorable mobile numbers based on various criteria.",
         "operationId": "findMemorableNumbers",
@@ -91,10 +87,10 @@
         }
       }
     },
-    "/purchase": {
+    "/mobile/purchase": {
       "post": {
-        "tags": ["purchase"],
-        "summary": "Submit a purchase request for for one or more mobile numbers",
+        "tags": ["Mobile Numbers"],
+        "summary": "Submit a purchase request for one or more mobile numbers",
         "description": "Submit a request to purchase UK mobile numbers.",
         "operationId": "purchaseNumbers",
         "consumes": ["application/x-www-form-urlencoded"],
@@ -128,6 +124,27 @@
           }
         }
       }
+    },
+    "/mobile/custom": {
+      "get": {
+        "tags": ["Mobile Numbers"],
+        "summary": "Custom operation for mobile numbers",
+        "description": "Perform a custom operation related to mobile numbers.",
+        "operationId": "customOperation",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          // Define any parameters your custom operation might need
+        ],
+        "responses": {
+          "200": {
+            "description": "Custom operation successful."
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
     }
   },
   "securityDefinitions": {
@@ -135,7 +152,6 @@
       "type": "basic"
     }
   },
-  "definitions": {
     "MemorableNumber": {
       "type": "object",
       "properties": {
