@@ -84,6 +84,9 @@
         "responses": {
           "200": {
             "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/MobileNumber"
+            },
             "examples": {
               "application/json": [
                 {
