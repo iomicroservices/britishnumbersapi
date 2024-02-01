@@ -31,7 +31,7 @@
       "get": {
         "tags": ["memorable"],
         "summary": "Retrieve memorable phone numbers",
-        "description": "",
+        "description": "Allows clients to search for memorable mobile numbers based on various criteria.",
         "operationId": "findMemorableNumbers",
         "consumes": ["application/json"],
         "produces": ["application/json"],
@@ -94,8 +94,8 @@
     "/purchase": {
       "post": {
         "tags": ["purchase"],
-        "summary": "Submit a purchase request for numbers",
-        "description": "",
+        "summary": "Submit a purchase request for for one or more mobile numbers",
+        "description": "Submit a request to purchase UK mobile numbers.",
         "operationId": "purchaseNumbers",
         "consumes": ["application/x-www-form-urlencoded"],
         "produces": ["application/json"],
