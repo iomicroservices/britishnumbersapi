@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "British Numbers API",
-    "description": "API for querying and purchasing British memorable phone numbers.",
+    "description": "API for querying and purchasing UK mobile phone numbers.",
     "version": "1.0.0"
   },
   "host": "api.britishnumbers.co.uk",
@@ -16,8 +16,8 @@
   "paths": {
     "/memorable": {
       "get": {
-        "summary": "Retrieve memorable phone numbers",
-        "description": "Allows clients to search for memorable phone numbers based on various criteria.",
+        "summary": "Retrieve memorable mobile numbers",
+        "description": "Allows clients to search for memorable mobile numbers based on various criteria.",
         "security": [
           {
             "basicAuth": []
@@ -71,7 +71,7 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of memorable phone numbers."
+            "description": "A list of memorable mobile numbers."
           },
           "401": {
             "description": "Unauthorized"
@@ -81,8 +81,8 @@
     },
     "/purchase": {
       "post": {
-        "summary": "Submit a purchase request for one or more numbers",
-        "description": "Submit a request to purchase memorable phone numbers.",
+        "summary": "Submit a purchase request for one or more mobile numbers",
+        "description": "Submit a request to purchase memorable mobile numbers.",
         "security": [
           {
             "basicAuth": []
