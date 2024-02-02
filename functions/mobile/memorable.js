@@ -1,4 +1,3 @@
-
 export async function onRequestGet(context) {
     const baseURL = context.env.MOBILE_DATABASE_BASE_URL;
     const url = new URL(context.request.url);
