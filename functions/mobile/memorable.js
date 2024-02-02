@@ -90,12 +90,9 @@ export async function onRequestGet(context) {
     } catch (error) {
         return new Response(`Error fetching memorable numbers: ${error.message}`, { status: 500 });
     }
-}
 
-async function logRequestToDatabase(data) {
+    
     const newSearchURL = `${context.env.DATABASE_BASE_URL}/rest/v1/search_queries`;
-    const apiKey = context.env.DATABASE_API_KEY;
-
     const headers = new Headers({
         'apikey': apiKey,
         'Authorization': `Bearer ${apiKey}`,
