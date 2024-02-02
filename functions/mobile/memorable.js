@@ -2,13 +2,13 @@ export async function onRequestGet(context) {
     const baseURL = context.env.MOBILE_DATABASE_BASE_URL;
     const url = new URL(context.request.url);
     const searchParams = url.search;
-    
+
     const headers = new Headers({
         'Prefer': 'count=exact',
         'apikey': context.env.MOBILE_DATABASE_API_KEY,
         'Authorization': `Bearer ${context.env.MOBILE_DATABASE_API_KEY}`,
     });
-    
+
     // Check if the "range" parameter exists and is not null in the URL
     if (url.searchParams.has('range') && url.searchParams.get('range') !== null) {
         headers.set('Range', url.searchParams.get('range'));
@@ -19,13 +19,13 @@ export async function onRequestGet(context) {
     const type = params.get('type') || 'number';
     const search = params.get('search') || '247365';
     const match = params.get('match') || null;
-    const price.gte = params.get('price_gte') || null;
-    const price.lte = params.get('price_lte') || null;
+    const price_gte = params.get('price_gte') || null;
+    const price_lte = params.get('price_lte') || null;
     const range = params.get('range') || '0-99';
-    
+
     // Validate the URL parameters
     const errors = [];
-    
+
     if (!/^\d+$/.test(search)) {
         errors.push('Search query must contain only numbers.');
     }
@@ -46,9 +46,8 @@ export async function onRequestGet(context) {
         return new Response(errors.join('\n'), { status: 400 });
     }
 
-
     // Construct the Supabase query URL
-    const databaseURL = `${baseURL}?select=*`;
+    const databaseURL = `${baseURL}/rest/v1/mobile_numbers?select=*`;
 
     const filters = [
         `available.eq.true`,
@@ -60,6 +59,11 @@ export async function onRequestGet(context) {
         filters.push(`${type}.eq.${search}`);
     } else {
         filters.push(`${type}.ilike.*${search}*`);
+    }
+
+    // Include the "range" parameter if it's present
+    if (range) {
+        filters.push(`range.eq.${range}`);
     }
 
     const query = `&and=(${filters.join(',')})`;
