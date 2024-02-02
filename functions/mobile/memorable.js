@@ -79,17 +79,28 @@ export async function onRequestGet(context) {
 
         const json = await firstResponse.json();
 
-        // Second API call to log/create a new record
-        const newSearchURL = `${baseURL}/rest/v1/search_queries`;
-        baseHeaders.set('Content-Type', 'application/json'); 
-        baseHeaders.set('Prefer', 'return=minimal');
+
+
+        const contentRange = firstResponse.headers.get('Content-Range');
+        let totalCount = 0;
+        
+        if (contentRange) {
+            // Extracts the total count after the last '/'
+            const parts = contentRange.split('/');
+            if (parts.length > 1) {
+                totalCount = parts[1]; // The part after '/' is the total count
+            }
+        }
+        
+        // Now, use totalCount in your second API call
         await fetch(newSearchURL, {
             method: 'POST',
-            headers: baseHeaders,
-            body:JSON.stringify({
+            headers: baseHeaders, // Ensure headers include 'Content-Type: application/json'
+            body: JSON.stringify({
                 search: search,
                 type: type,
-                result: JSON.stringify(json),
+                count: totalCount, // Use the total number of matches found
+                result: JSON.stringify(json), // Assuming 'json' is the result from the first API call
             }),
         });
 
