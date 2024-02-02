@@ -9,6 +9,11 @@ export async function onRequestGet(context) {
         'Authorization': `Bearer ${context.env.MOBILE_DATABASE_API_KEY}`,
     });
 
+    // Check if the "range" parameter exists and is not null in the URL
+    if (url.searchParams.has('range') && url.searchParams.get('range') !== null) {
+        headers.set('Range', url.searchParams.get('range'));
+    }
+
     // Extract query parameters from the request
     const params = url.searchParams;
     const type = params.get('type') || 'number';
