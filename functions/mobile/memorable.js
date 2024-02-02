@@ -1,12 +1,13 @@
 export async function onRequestGet(context) {
     const baseURL = context.env.DATABASE_BASE_URL;
     const url = new URL(context.request.url);
+    const apiKey = context.env.DATABASE_API_KEY;
     const searchParams = url.search;
 
-    const headers = new Headers({
-        'Prefer': 'count=exact',
-        'apikey': context.env.DATABASE_API_KEY,
-        'Authorization': `Bearer ${context.env.DATABASE_API_KEY}`,
+    // Common headers pre-configured
+    const baseHeaders = new Headers({
+        'apikey': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
     });
 
     // Check if the "range" parameter exists and is not null in the URL
@@ -14,7 +15,7 @@ export async function onRequestGet(context) {
         headers.set('Range', url.searchParams.get('range'));
     }
 
-    // Extract query parameters from the request
+    // Extract query parameters
     const params = url.searchParams;
     const type = params.get('type') || 'number';
     const search = params.get('search') || '247365';
@@ -40,54 +41,64 @@ export async function onRequestGet(context) {
     if (match && match !== 'exact') {
         errors.push('Invalid match parameter. Use "exact" or leave it blank.');
     }
-    // Check if there are any validation errors
+
     if (errors.length > 0) {
         return new Response(errors.join('\n'), { status: 400 });
     }
 
-    // Construct the database query URL
+    // Construct the first API call URL
     const searchMobileURL = `${baseURL}/rest/v1/mobile_numbers?select=*`;
-    const filters = [
-        `available.eq.true`,
-    ];
-    
-    if (price_lte && /^\d+(\.\d+)?$/.test(price_lte)) {
-        filters.push(`price.lte.${price_lte}`);
-    }
-    
+    const filters = [`available.eq.true`];
+
     if (price_gte && /^\d+(\.\d+)?$/.test(price_gte)) {
         filters.push(`price.gte.${price_gte}`);
     }
-    
+    if (price_lte && /^\d+(\.\d+)?$/.test(price_lte)) {
+        filters.push(`price.lte.${price_lte}`);
+    }
     if (match === 'exact') {
         filters.push(`${type}.eq.${search}`);
     } else {
         filters.push(`${type}.ilike.*${search}*`);
     }
-    
+
     const query = `&and=(${filters.join(',')})`;
-    
     const destinationURL = `${searchMobileURL}${query}`;
 
     try {
-        const response = await fetch(destinationURL, {
+        // First API call to fetch data
+        baseHeaders.set('Prefer', 'count=exact');
+        const firstResponse = await fetch(destinationURL, {
             method: 'GET',
-            headers: headers,
+            headers: baseHeaders,
         });
 
-        if (!response.ok) {
-            throw new Error(`Database request failed with status: ${response.status}`);
+        if (!firstResponse.ok) {
+            throw new Error(`Database request failed with status: ${firstResponse.status}`);
         }
 
-        const json = await response.json();
+        const json = await firstResponse.json();
 
+        // Second API call to log/create a new record
+        const newSearchURL = `${baseURL}/rest/v1/search_queries`;
+        baseHeaders.set('Prefer', 'return=minimal');
+        await fetch(newSearchURL, {
+            method: 'POST',
+            headers: baseHeaders,
+            body: JSON.stringify({
+                search: search,
+                type: type,
+                result: JSON.stringify(json),
+            }),
+        });
+
+        // Return the response from the first API call
         return new Response(JSON.stringify(json), {
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers,
-            body: response.data,
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
         });
     } catch (error) {
-        return new Response(`Error fetching memorable numbers: ${error.message}`, { status: 500 });
+        // Error handling for both API calls
+        return new Response(`Error: ${error.message}`, { status: 500 });
     }
 }
