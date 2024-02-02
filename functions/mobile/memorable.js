@@ -77,7 +77,6 @@ export async function onRequestGet(context) {
             status: response.status,
             statusText: response.statusText,
             headers: response.headers,
-            body: JSON.stringify(responseData),
         });
     } catch (error) {
         return new Response(`Error fetching memorable numbers: ${error.message}`, { status: 500 });
