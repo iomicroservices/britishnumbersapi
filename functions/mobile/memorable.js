@@ -3,12 +3,11 @@ async function handleRequest(request, env) {
   const params = url.searchParams;
 
   // Base URL for database API
-  const databaseUrl = `${env.MOBILE_DATABASE_BASE_URL}/rest/v1/mobile_numbers`;
+  const databaseUrl = `${context.env.MOBILE_DATABASE_BASE_URL}/rest/v1/mobile_numbers`;
 
   // Headers for authentication and preferences
   const headers = {
-    'apikey': env.MOBILE_DATABASE_API_KEY,
-    'Authorization': `Bearer ${env.MOBILE_DATABASE_API_KEY}`,
+    'apikey': ${context.env.MOBILE_DATABASE_API_KEY},
     'Content-Type': 'application/json',
     'Prefer': 'count=exact'
   };
