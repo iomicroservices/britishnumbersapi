@@ -61,11 +61,6 @@ export async function onRequestGet(context) {
         filters.push(`${type}.ilike.*${search}*`);
     }
 
-    // Include the "range" parameter if it's present
-    if (range) {
-        filters.push(`range.eq.${range}`);
-    }
-
     const query = `&and=(${filters.join(',')})`;
 
     const destinationURL = `${databaseURL}${query}`;
