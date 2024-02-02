@@ -69,14 +69,13 @@ export async function onRequestGet(context) {
             throw new Error(`Supabase request failed with status: ${response.status}`);
         }
 
-        const databaseResponse = await response.json();
-        const responseData = databaseResponse.data; // Extract the "Data" field
+        const json = await response.json();
 
-        // Return the extracted data as the response
-        return new Response(JSON.stringify(responseData), {
+        return new Response(JSON.stringify(json), {
             status: response.status,
             statusText: response.statusText,
             headers: response.headers,
+            body: response.data,
         });
     } catch (error) {
         return new Response(`Error fetching memorable numbers: ${error.message}`, { status: 500 });
