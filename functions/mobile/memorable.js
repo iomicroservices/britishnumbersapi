@@ -92,8 +92,9 @@ export async function onRequestGet(context) {
             }
         }
         
-        // Second API call to log/create a new record
+        // Second API call to log/create a new search record
         const newSearchURL = `${baseURL}/rest/v1/search_queries`;
+        const sourceUrl = context.request.headers.get('Referer') || 'unknown';
         baseHeaders.set('Content-Type', 'application/json'); 
         baseHeaders.set('Prefer', 'return=minimal');
         await fetch(newSearchURL, {
@@ -103,6 +104,7 @@ export async function onRequestGet(context) {
                 search: search,
                 type: type,
                 count: totalCount,
+                source: sourceURL,
                 result: JSON.stringify(json), 
             }),
         });
