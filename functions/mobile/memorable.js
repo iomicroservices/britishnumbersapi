@@ -90,31 +90,4 @@ export async function onRequestGet(context) {
     } catch (error) {
         return new Response(`Error fetching memorable numbers: ${error.message}`, { status: 500 });
     }
-
-    
-    const newSearchURL = `${context.env.DATABASE_BASE_URL}/rest/v1/search_queries`;
-    const headers = new Headers({
-        'apikey': apiKey,
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal',
-    });
-
-    try {
-        const response = await fetch(newSearchURL, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify({
-                search: search,
-                type: type,
-                result: JSON.stringify(json),
-            }),
-        });
-
-        if (!response.ok) {
-            throw new Error(`Supabase request for logging failed with status: ${response.status}`);
-        }
-    } catch (error) {
-        console.error(`Error logging request to Supabase: ${error.message}`);
-    }
 }
