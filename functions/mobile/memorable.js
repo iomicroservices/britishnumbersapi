@@ -2,74 +2,71 @@ async function handleRequest(request, env) {
   const url = new URL(request.url);
   const params = url.searchParams;
 
-  // Base URL for database API - Use `env` directly as function parameter
+  // Base URL for database API
   const databaseUrl = `${env.MOBILE_DATABASE_BASE_URL}/rest/v1/mobile_numbers`;
 
-  // Headers for authentication and preferences - Correctly interpolate the environment variable
+  // Headers for authentication and preferences
   const headers = {
-    'apikey': env.MOBILE_DATABASE_API_KEY, // Corrected: Removed ${} since it's already JavaScript context
+    'apikey': env.MOBILE_DATABASE_API_KEY,
     'Content-Type': 'application/json',
     'Prefer': 'count=exact'
   };
 
-  // Add "Range" header if "range" query parameter is present and not null
-  const range = params.get('range');
-  if (range) {
-    headers["Range"] = range;
+  // Dynamically add "Range" header if "range" query parameter is present and not null
+  const rangeParam = params.get('range');
+  if (rangeParam) {
+    headers["Range"] = rangeParam;
   }
-    
-  // Constructing the query parameters
-  let query = `available=eq.true`;
+
+  // Constructing the query parameters, starting with always true condition for 'available'
+  let queryParts = ['available=eq.true'];
 
   // Add search logic based on 'match' parameter
   const search = params.get('search');
   const match = params.get('match');
   if (search) {
-    if (match === 'exact') {
-      query += `&number=eq.${search}`;
-    } else {
-      // Use asterisks for wildcard in ilike search
-      query += `&number=ilike.*${encodeURIComponent(search)}*`;
-    }
+    const searchCondition = match === 'exact' ? `eq.${search}` : `ilike.*${encodeURIComponent(search)}*`;
+    queryParts.push(`number=${searchCondition}`);
   }
 
   // Add price filters if provided
-  const price_lte = params.get('price_lte');
-  const price_gte = params.get('price_gte');
-  if (price_lte) {
-    query += `&price=lte.${price_lte}`;
+  const priceLte = params.get('price_lte');
+  const priceGte = params.get('price_gte');
+  if (priceLte) {
+    queryParts.push(`price=lte.${priceLte}`);
   }
-  if (price_gte) {
-    query += `&price=gte.${price_gte}`;
+  if (priceGte) {
+    queryParts.push(`price=gte.${priceGte}`);
   }
+
+  // Join all parts of the query with '&'
+  const queryString = queryParts.join('&');
 
   // Making the request to the database
   try {
-    const response = await fetch(`${databaseUrl}?${query}`, { method: 'GET', headers: headers });
+    const response = await fetch(`${databaseUrl}?${queryString}`, { method: 'GET', headers });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
 
-    // Construct response headers object
-    const responseHeaders = new Headers({
-      'Content-Type': 'application/json',
-      // Include CORS headers if this API is meant to be accessed from web browsers on different origins
-      'Access-Control-Allow-Origin': '*'
-    });
-
     return new Response(JSON.stringify(data), {
-      headers: responseHeaders,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*' // Include this if your API is accessed from different origins
+      },
       status: 200,
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       status: 500,
     });
   }
 }
 
 addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request, event.env)); // Updated to pass `event.env` correctly
+  event.respondWith(handleRequest(event.request, event.env));
 });
