@@ -110,7 +110,6 @@ async function logRequestToDatabase(data) {
             body: JSON.stringify({
                 search: search,
                 type: type,
-                count: response.headers.get('Content-Range'),
                 result: JSON.stringify(json),
             }),
         });
