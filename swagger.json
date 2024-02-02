@@ -154,7 +154,7 @@
       "post": {
         "tags": ["Mobile Numbers"],
         "summary": "Create a custom UK mobile number",
-        "description": "Request custom or specific UK mobile numbers, offering solutions for both unique requirements and situations where preferred mobile numbers are unavailable in the /memorable endpoint.",
+        "description": "Request custom or specific UK mobile numbers, offering solutions for both unique requirements and situations where preferred mobile numbers are unavailable in the /memorable endpoint. This is an asynchronous API - you will receive the available numbers within 3-5 business days via email.",
         "operationId": "customOperation",
         "consumes": ["application/json"],
         "produces": ["application/json"],
