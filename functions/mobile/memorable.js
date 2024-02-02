@@ -92,15 +92,18 @@ export async function onRequestGet(context) {
             }
         }
         
-        // Now, use totalCount in your second API call
+        // Second API call to log/create a new record
+        const newSearchURL = `${baseURL}/rest/v1/search_queries`;
+        baseHeaders.set('Content-Type', 'application/json'); 
+        baseHeaders.set('Prefer', 'return=minimal');
         await fetch(newSearchURL, {
             method: 'POST',
-            headers: baseHeaders, // Ensure headers include 'Content-Type: application/json'
+            headers: baseHeaders, 
             body: JSON.stringify({
                 search: search,
                 type: type,
-                count: totalCount, // Use the total number of matches found
-                result: JSON.stringify(json), // Assuming 'json' is the result from the first API call
+                count: totalCount,
+                result: JSON.stringify(json), 
             }),
         });
 
