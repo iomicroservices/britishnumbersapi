@@ -9,11 +9,6 @@ export async function onRequestGet(context) {
         'Authorization': `Bearer ${context.env.MOBILE_DATABASE_API_KEY}`,
     });
 
-    // Check if the "range" parameter exists and is not null in the URL
-    if (url.searchParams.has('range') && url.searchParams.get('range') !== null) {
-        headers.set('Range', url.searchParams.get('range'));
-    }
-
     // Extract query parameters from the request
     const params = url.searchParams;
     const type = params.get('type') || 'number';
@@ -21,7 +16,6 @@ export async function onRequestGet(context) {
     const match = params.get('match') || null;
     const price_gte = params.get('price_gte') || null;
     const price_lte = params.get('price_lte') || null;
-    const range = params.get('range') || '0-99';
 
     // Validate the URL parameters
     const errors = [];
@@ -46,8 +40,8 @@ export async function onRequestGet(context) {
         return new Response(errors.join('\n'), { status: 400 });
     }
 
-    // Construct the Supabase query URL
-    const databaseURL = `${baseURL}/rest/v1/mobile_numbers?select=*`;
+    // Construct the database query URL
+    const databaseURL = `${baseURL}?select=*`;
 
     const filters = [
         `available.eq.true`,
@@ -70,7 +64,14 @@ export async function onRequestGet(context) {
             method: 'GET',
             headers: headers,
         });
-        return new Response(response.body, {
+
+        if (!response.ok) {
+            throw new Error(`Supabase request failed with status: ${response.status}`);
+        }
+
+        const json = await response.json();
+
+        return new Response(JSON.stringify(json), {
             status: response.status,
             statusText: response.statusText,
             headers: response.headers,
