@@ -81,6 +81,7 @@ export async function onRequestGet(context) {
 
         // Second API call to log/create a new record
         const newSearchURL = `${baseURL}/rest/v1/search_queries`;
+        baseHeaders.set('Content-Type', 'application/json'); 
         baseHeaders.set('Prefer', 'return=minimal');
         await fetch(newSearchURL, {
             method: 'POST',
