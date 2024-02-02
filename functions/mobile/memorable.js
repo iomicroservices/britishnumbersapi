@@ -8,6 +8,7 @@ async function handleRequest(request, env) {
   // Headers for authentication and preferences
   const headers = {
     'apikey': env.MOBILE_DATABASE_API_KEY,
+    'Authorization': `Bearer ${env.MOBILE_DATABASE_API_KEY}`,
     'Content-Type': 'application/json',
     'Prefer': 'count=exact'
   };
