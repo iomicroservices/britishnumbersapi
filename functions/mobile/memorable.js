@@ -30,7 +30,6 @@ export async function onRequestGet(context) {
     if (!/^\d+$/.test(search)) {
         errors.push('Search query must contain only numbers.');
     }
-
     if (type !== 'number' && type !== 'prefix' && type !== 'last_six') {
         errors.push('Invalid type parameter. Use "number", "prefix", or "last_six".');
     }
