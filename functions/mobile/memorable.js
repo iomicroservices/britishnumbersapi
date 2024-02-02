@@ -42,21 +42,26 @@ export async function onRequestGet(context) {
 
     // Construct the database query URL
     const databaseURL = `${baseURL}?select=*`;
-
     const filters = [
         `available.eq.true`,
-        `price.gte.${price_gte || '0'}`,
-        `price.lte.${price_lte || '99'}`,
     ];
-
+    
+    if (price_lte && /^\d+(\.\d+)?$/.test(price_lte)) {
+        filters.push(`price.lte.${price_lte}`);
+    }
+    
+    if (price_gte && /^\d+(\.\d+)?$/.test(price_gte)) {
+        filters.push(`price.gte.${price_gte}`);
+    }
+    
     if (match === 'exact') {
         filters.push(`${type}.eq.${search}`);
     } else {
         filters.push(`${type}.ilike.*${search}*`);
     }
-
+    
     const query = `&and=(${filters.join(',')})`;
-
+    
     const destinationURL = `${databaseURL}${query}`;
 
     try {
@@ -66,7 +71,7 @@ export async function onRequestGet(context) {
         });
 
         if (!response.ok) {
-            throw new Error(`Supabase request failed with status: ${response.status}`);
+            throw new Error(`Database request failed with status: ${response.status}`);
         }
 
         const json = await response.json();
