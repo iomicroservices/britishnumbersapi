@@ -85,11 +85,11 @@ export async function onRequestGet(context) {
         await fetch(newSearchURL, {
             method: 'POST',
             headers: baseHeaders,
-            body:{
+            body:JSON.stringify({
                 search: search,
                 type: type,
                 result: JSON.stringify(json),
-            },
+            }),
         });
 
         // Return the response from the first API call
