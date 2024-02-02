@@ -1,12 +1,12 @@
 export async function onRequestGet(context) {
-    const baseURL = context.env.MOBILE_DATABASE_BASE_URL;
+    const baseURL = context.env.DATABASE_BASE_URL;
     const url = new URL(context.request.url);
     const searchParams = url.search;
 
     const headers = new Headers({
         'Prefer': 'count=exact',
-        'apikey': context.env.MOBILE_DATABASE_API_KEY,
-        'Authorization': `Bearer ${context.env.MOBILE_DATABASE_API_KEY}`,
+        'apikey': context.env.DATABASE_API_KEY,
+        'Authorization': `Bearer ${context.env.DATABASE_API_KEY}`,
     });
 
     // Check if the "range" parameter exists and is not null in the URL
@@ -46,7 +46,7 @@ export async function onRequestGet(context) {
     }
 
     // Construct the database query URL
-    const databaseURL = `${baseURL}?select=*`;
+    const searchMobileURL = `${baseURL}/rest/v1/mobile_numbers?select=*`;
     const filters = [
         `available.eq.true`,
     ];
@@ -67,7 +67,7 @@ export async function onRequestGet(context) {
     
     const query = `&and=(${filters.join(',')})`;
     
-    const destinationURL = `${databaseURL}${query}`;
+    const destinationURL = `${searchMobileURL}${query}`;
 
     try {
         const response = await fetch(destinationURL, {
@@ -89,5 +89,36 @@ export async function onRequestGet(context) {
         });
     } catch (error) {
         return new Response(`Error fetching memorable numbers: ${error.message}`, { status: 500 });
+    }
+}
+
+async function logRequestToDatabase(data) {
+    const newSearchURL = `${context.env.DATABASE_BASE_URL}/rest/v1/search_queries`;
+    const apiKey = context.env.DATABASE_API_KEY;
+
+    const headers = new Headers({
+        'apikey': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+    });
+
+    try {
+        const response = await fetch(newSearchURL, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                search: search,
+                type: type,
+                count: count: response.headers.get('Content-Range'),
+                result: JSON.stringify(json),
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Supabase request for logging failed with status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error(`Error logging request to Supabase: ${error.message}`);
     }
 }
