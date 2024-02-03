@@ -3,6 +3,7 @@ export async function onRequestGet(context) {
     const url = new URL(context.request.url);
     const apiKey = context.env.DATABASE_API_KEY;
     const searchParams = url.search;
+    const sourceUrl = context.request.headers.get('Referer') || 'unknown';
 
     // Common headers pre-configured
     const baseHeaders = new Headers({
@@ -94,7 +95,6 @@ export async function onRequestGet(context) {
         
         // Second API call to log/create a new search record
         const newSearchURL = `${baseURL}/rest/v1/search_queries`;
-        const sourceUrl = context.request.headers.get('Referer') || 'unknown';
         baseHeaders.set('Content-Type', 'application/json'); 
         baseHeaders.set('Prefer', 'return=minimal');
         await fetch(newSearchURL, {
@@ -104,7 +104,7 @@ export async function onRequestGet(context) {
                 search: search,
                 type: type,
                 count: totalCount,
-                source: sourceURL,
+                source: sourceUrl,
                 result: JSON.stringify(json), 
             }),
         });
