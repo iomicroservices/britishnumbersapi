@@ -4,3 +4,6 @@
 .float-right {
     display: none !important;
 }
+.info hgroup.main a {
+    display: none !important;
+}
