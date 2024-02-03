@@ -1,15 +1,5 @@
 export async function onRequestGet(context) {
-    
-    const authHeader = extractAuthHeader(context.request);
-    if (!authHeader) {
-        return new Response('Unauthorized: Missing Authorization header', { status: 401 });
-    }
-    const isVerified = await verifyApiKey(authHeader);
-    if (!isVerified) {
-        return new Response('Unauthorized: API key verification failed', { status: 401 });
-    }
-    
-    
+
     const baseURL = context.env.DATABASE_BASE_URL;
     const url = new URL(context.request.url);
     const apiKey = context.env.DATABASE_API_KEY;
