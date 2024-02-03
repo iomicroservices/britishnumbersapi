@@ -105,6 +105,8 @@ export async function onRequestGet(context) {
                 type: type,
                 count: totalCount,
                 source: sourceUrl,
+                mobile: 1,
+                landline: 0,
                 result: JSON.stringify(json), 
             }),
         });
