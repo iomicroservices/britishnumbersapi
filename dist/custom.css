@@ -4,3 +4,6 @@
 .info hgroup.main a {
     display: none !important;
 }
+.topbar {
+  display: none !important;
+}
