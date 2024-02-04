@@ -1,4 +1,18 @@
 export async function onRequestGet(context) {
+    const baseURL = context.env.DATABASE_BASE_URL;
+    const url = new URL(context.request.url);
+    const apiKey = context.env.DATABASE_API_KEY;
+    const searchParams = url.search;
+    const sourceUrl = context.request.headers.get('Referer') || 'unknown';
+    
+
+    // Common headers pre-configured
+    const baseHeaders = new Headers({
+        'apikey': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
+    });
+
+    
     // Function to extract the full Authorization header from the request
     function extractAuthHeader(request) {
         const authHeader = request.headers.get('Authorization') || '';
@@ -6,13 +20,12 @@ export async function onRequestGet(context) {
     }
 
     async function verifyApiKey(authHeader) {
-        const url = `${context.env.DATABASE_BASE_URL}/rest/v1/resellerKeys?select=*&apiKey=eq.${encodeURIComponent(authHeader)}`;
+        const url = `${baseURL}/rest/v1/resellerKeys?select=*&apiKey=eq.${encodeURIComponent(authHeader)}`;
         const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'apikey': context.env.DATABASE_API_KEY,
                 'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
             },
         });
 
@@ -37,18 +50,6 @@ export async function onRequestGet(context) {
         return new Response('Unauthorized: API key verification failed', { status: 401 });
     }
 
-    const baseURL = context.env.DATABASE_BASE_URL;
-    const url = new URL(context.request.url);
-    const apiKey = context.env.DATABASE_API_KEY;
-    const searchParams = url.search;
-    const sourceUrl = context.request.headers.get('Referer') || 'unknown';
-    
-
-    // Common headers pre-configured
-    const baseHeaders = new Headers({
-        'apikey': apiKey,
-        'Authorization': `Bearer ${apiKey}`,
-    });
 
     // Check if the "range" parameter exists and is not null in the URL
     if (url.searchParams.has('range') && url.searchParams.get('range') !== null) {
