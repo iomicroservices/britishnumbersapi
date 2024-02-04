@@ -12,45 +12,6 @@ export async function onRequestGet(context) {
         'Authorization': `Bearer ${apiKey}`,
     });
 
-    
-    // Function to extract the full Authorization header from the request
-    function extractAuthHeader(request) {
-        const authHeader = request.headers.get('Authorization') || '';
-        return authHeader; // Directly returns the full Authorization header value
-    }
-
-    async function verifyApiKey(authHeader) {
-        const url = `${baseURL}/rest/v1/resellerKeys?select=*&apiKey=eq.${encodeURIComponent(authHeader)}`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'apikey': context.env.DATABASE_API_KEY,
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            console.error('Failed to verify API key with database:', response.statusText);
-            return false;
-        }
-
-        const data = await response.json();
-        return data.length > 0; // True if the full Authorization header exists in the apiKey column
-    }
-
-    // Extract the full Authorization header
-    const authHeader = extractAuthHeader(context.request);
-    if (!authHeader) {
-        return new Response('Unauthorized: Missing Authorization header', { status: 401 });
-    }
-
-    // Verify the API key
-    const isVerified = await verifyApiKey(authHeader);
-    if (!isVerified) {
-        return new Response('Unauthorized: API key verification failed', { status: 401 });
-    }
-
 
     // Check if the "range" parameter exists and is not null in the URL
     if (url.searchParams.has('range') && url.searchParams.get('range') !== null) {
