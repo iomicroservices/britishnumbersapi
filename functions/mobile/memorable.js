@@ -1,4 +1,41 @@
 export async function onRequestGet(context) {
+    // Function to extract the full Authorization header from the request
+    function extractAuthHeader(request) {
+        const authHeader = request.headers.get('Authorization') || '';
+        return authHeader; // Directly returns the full Authorization header value
+    }
+
+    async function verifyApiKey(authHeader) {
+        const url = `${context.env.DATABASE_BASE_URL}/rest/v1/resellerKeys?select=*&apiKey=eq.${encodeURIComponent(authHeader)}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'apikey': context.env.DATABASE_API_KEY,
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            console.error('Failed to verify API key with Supabase:', response.statusText);
+            return false;
+        }
+
+        const data = await response.json();
+        return data.length > 0; // True if the full Authorization header exists in the apiKey column
+    }
+
+    // Extract the full Authorization header
+    const authHeader = extractAuthHeader(context.request);
+    if (!authHeader) {
+        return new Response('Unauthorized: Missing Authorization header', { status: 401 });
+    }
+
+    // Verify the API key
+    const isVerified = await verifyApiKey(authHeader);
+    if (!isVerified) {
+        return new Response('Unauthorized: API key verification failed', { status: 401 });
+    }
 
     const baseURL = context.env.DATABASE_BASE_URL;
     const url = new URL(context.request.url);
