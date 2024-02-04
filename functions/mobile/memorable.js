@@ -26,6 +26,7 @@ export async function onRequestGet(context) {
             headers: {
                 'apikey': context.env.DATABASE_API_KEY,
                 'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
             },
         });
 
