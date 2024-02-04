@@ -20,7 +20,7 @@ export async function onRequestGet(context) {
     }
 
     async function verifyApiKey(authHeader) {
-        const url = `${baseURL}/rest/v1/resellerKeys?select=*&apiKey=eq.${encodeURIComponent(authHeader)}`;
+        const url = `${baseURL}/rest/v1/resellerKeys?select=*&apiKey=eq.${authHeader}`;
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -30,7 +30,7 @@ export async function onRequestGet(context) {
         });
 
         if (!response.ok) {
-            console.error('Failed to verify API key with Supabase:', response.statusText);
+            console.error('Failed to verify API key with database:', response.statusText);
             return false;
         }
 
