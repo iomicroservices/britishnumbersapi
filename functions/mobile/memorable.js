@@ -20,7 +20,7 @@ export async function onRequestGet(context) {
     }
 
     async function verifyApiKey(authHeader) {
-        const url = `${baseURL}/rest/v1/resellerKeys?select=*&apiKey=eq.${authHeader}`;
+        const url = `${baseURL}/rest/v1/resellerKeys?select=*&apiKey=eq.${encodeURIComponent(authHeader)}`;
         const response = await fetch(url, {
             method: 'GET',
             headers: {
