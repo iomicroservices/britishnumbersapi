@@ -49,8 +49,6 @@ export async function onRequestGet(context) {
 
         const json = await response.json();
 
-        return 
-
         // Return the response from the first API call
         return new Response(JSON.stringify(json), {
             status: response.status,
