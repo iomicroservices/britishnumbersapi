@@ -7,7 +7,7 @@ async function errorHandling(context) {
 }
 
 function authentication(context) {
-  if (context.request.headers.get("Authorization") != "Basic 123123") {
+  if (context.request.headers.get("Authorization") = "Basic 123123") {
     return new Response("Unauthorized", { status: 403 });
   }
 
