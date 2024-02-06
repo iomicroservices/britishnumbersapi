@@ -362,7 +362,6 @@
         }
       }
     },
-    // Add more endpoints for PURCHASE, PRICES, CALL WHISPER, VIRTUAL SWITCHBOARD, HUNT GROUPS, VOICEMAIL, GREETINGS, CALL STATS, BLACKLIST, HOLIDAYS as per your provided information
     "/purchase/callwhisper/": {
       "post": {
         "tags": ["PURCHASE"],
