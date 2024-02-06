@@ -26,7 +26,7 @@ async function handleRequest(request) {
 }
 
 async function tariffPrices(request, url) {
-  const destinationURL = baseURL + '/list/prices/tariff' + url.search;
+  const destinationURL = baseURL + '/list/prices/tariff';
   const init = {
     method: request.method,
     headers: request.headers,
@@ -40,7 +40,7 @@ async function tariffPrices(request, url) {
 }
 
 async function whisperPrices(request, url) {
-  const destinationURL = baseURL + '/list/prices/whisper' + url.search;
+  const destinationURL = baseURL + '/list/prices/whisper';
   const init = {
     method: request.method,
     headers: request.headers,
@@ -53,7 +53,7 @@ async function whisperPrices(request, url) {
   });
 }
 async function vsbPrices(request, url) {
-  const destinationURL = baseURL + '/list/prices/vsb' + url.search;
+  const destinationURL = baseURL + '/list/prices/vsb';
   const init = {
     method: request.method,
     headers: request.headers,
@@ -66,7 +66,7 @@ async function vsbPrices(request, url) {
   });
 }
 async function tconnectPrices(request, url) {
-  const destinationURL = baseURL + '/list/prices/tconnect' + url.search;
+  const destinationURL = baseURL + '/list/prices/tconnect';
   const init = {
     method: request.method,
     headers: request.headers,
@@ -79,7 +79,7 @@ async function tconnectPrices(request, url) {
   });
 }
 async function recordingPrices(request, url) {
-  const destinationURL = baseURL + '/list/prices/recording' + url.search;
+  const destinationURL = baseURL + '/list/prices/recording';
   const init = {
     method: request.method,
     headers: request.headers,
