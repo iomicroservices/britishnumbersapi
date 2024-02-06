@@ -1,27 +1,26 @@
 addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
-})
+  event.respondWith(handleRequest(event.request));
+});
 
 async function handleRequest(request) {
   const url = new URL(request.url);
   const path = url.pathname;
   const params = url.searchParams;
-  const baseURL = context.env.TELEPHONE_BASE_URL
+  const baseURL = context.env.TELEPHONE_BASE_URL;
 
   // Routing based on the path
-  switch (path) {
-    case '/telephone/numbers/tariffs/':
-        return listTariffs(request, url);
-    case '/telephone/numbers/':
-        return listNumbers(request, url);
-    case '/telephone/numbers/config':
-      return listNumberConfig(request, url);
-    case '/telephone/numbers/available/':
-      return listAvailableNumbers(request, url);
-    case '/telephone/numbers/update/':
-      return updateNumberConfig(request, url);
-    default:
-      return new Response('Not Found', { status: 404 });
+  if (path.startsWith('/telephone/numbers/tariffs/')) {
+    return listTariffs(request, url);
+  } else if (path.startsWith('/telephone/numbers/')) {
+    return listNumbers(request, url);
+  } else if (path.startsWith('/telephone/numbers/config/')) {
+    return listNumberConfig(request, url);
+  } else if (path.startsWith('/telephone/numbers/available/')) {
+    return listAvailableNumbers(request, url);
+  } else if (path.startsWith('/telephone/numbers/update/')) {
+    return updateNumberConfig(request, url);
+  } else {
+    return new Response('Not Found', { status: 404 });
   }
 }
 
@@ -54,7 +53,8 @@ async function listNumbers(request, url) {
 }
 
 async function listNumberConfig(request, url) {
-  const destinationURL = baseURL + '/list/number' + url.search;
+  const numberFromPath = url.pathname.split('/').pop(); // Extract the number from the path
+  const destinationURL = baseURL + '/list/number/' + numberFromPath;
   const init = {
     method: request.method,
     headers: request.headers,
@@ -68,7 +68,8 @@ async function listNumberConfig(request, url) {
 }
 
 async function listAvailableNumbers(request, url) {
-  const destinationURL = baseURL + '/list/available' + url.search;
+  const numberFromPath = url.pathname.split('/').pop(); // Extract the number from the path
+  const destinationURL = baseURL + '/list/available' + numberFromPath;
   const init = {
     method: request.method,
     headers: request.headers,
