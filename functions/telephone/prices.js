@@ -32,6 +32,7 @@ async function tariffPrices(baseURL, request) {
     headers: request.headers,
   };
   const response = await fetch(destinationURL, init);
+  console.log('Response:', response.status);
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -46,6 +47,7 @@ async function whisperPrices(baseURL, request) {
     headers: request.headers,
   };
   const response = await fetch(destinationURL, init);
+  console.log('Response:', response.status);
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -59,6 +61,7 @@ async function vsbPrices(baseURL, request) {
     headers: request.headers,
   };
   const response = await fetch(destinationURL, init);
+  console.log('Response:', response.status);
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -72,6 +75,7 @@ async function tconnectPrices(baseURL, request) {
     headers: request.headers,
   };
   const response = await fetch(destinationURL, init);
+  console.log('Response:', response.status);
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -85,6 +89,7 @@ async function recordingPrices(baseURL, request) {
     headers: request.headers,
   };
   const response = await fetch(destinationURL, init);
+  console.log('Response:', response.status);
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
