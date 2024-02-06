@@ -1260,7 +1260,7 @@
           "type": "string"
         },
         "blacklist": {
-          "type": "string in ['on his hunt']}
+          "type": "string"}
     },
     "HuntGroupMember": {
       "type": "object",
