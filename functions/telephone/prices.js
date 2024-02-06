@@ -31,13 +31,17 @@ async function tariffPrices(baseURL, request) {
     method: request.method,
     headers: request.headers,
   };
-  const response = await fetch(destinationURL, init);
-  console.log('Response:', response.status);
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: response.headers,
-  });
+
+  try {
+    const response = await fetch(destinationURL, init);
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  } catch (error) {
+    return new Response(`Error fetching tariff prices: ${error.message}`, { status: 500 });
+  }
 }
 
 async function whisperPrices(baseURL, request) {
