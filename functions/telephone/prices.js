@@ -11,15 +11,15 @@ async function handleRequest(request) {
   // Routing based on the path
   switch (path) {
     case '/telephone/prices/tariff':
-        return tariffPrices(request, url);
+        return tariffPrices(baseURL, request);
     case '/telephone/prices/whisper':
-      return whisperPrices(request, url);
+      return whisperPrices(baseURL, request);
     case '/telephone/prices/vsb':
-      return vsbPrices(request, url);
+      return vsbPrices(baseURL, request);
     case '/telephone/prices/tconnect':
-      return tconnectPrices(request, url);
+      return tconnectPrices(baseURL, request);
     case '/telephone/prices/recording':
-      return recordingPrices(request, url);
+      return recordingPrices(baseURL, request);
     default:
       return new Response('Not Found', { status: 404 });
   }
