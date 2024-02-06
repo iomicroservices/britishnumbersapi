@@ -6,7 +6,7 @@ async function handleRequest(request) {
   const url = new URL(request.url);
   const path = url.pathname;
   const params = url.searchParams;
-  const baseURL = context.env.TELEPHONE_BASE_URL
+  const baseURL = 'https://hook.eu1.make.com/e4b3tzrf17c124cvogf5j7xbxn874fu8'
 
   // Routing based on the path
   switch (path) {
