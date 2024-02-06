@@ -6,7 +6,7 @@ async function handleRequest(request) {
   const url = new URL(request.url);
   const path = url.pathname;
   const params = url.searchParams;
-  const baseURL = 'https://hook.eu1.make.com/e4b3tzrf17c124cvogf5j7xbxn874fu8'
+  const baseURL = context.env.TELEPHONE_BASE_URL
 
   // Routing based on the path
   switch (path) {
@@ -25,7 +25,7 @@ async function handleRequest(request) {
   }
 }
 
-async function tariffPrices(request, baseURL) {
+async function tariffPrices(baseURL, request) {
   const destinationURL = baseURL + '/list/prices/tariff';
   const init = {
     method: request.method,
@@ -39,7 +39,7 @@ async function tariffPrices(request, baseURL) {
   });
 }
 
-async function whisperPrices(baseURL) {
+async function whisperPrices(baseURL, request) {
   const destinationURL = baseURL + '/list/prices/whisper';
   const init = {
     method: request.method,
@@ -52,7 +52,7 @@ async function whisperPrices(baseURL) {
     headers: response.headers,
   });
 }
-async function vsbPrices(baseURL) {
+async function vsbPrices(baseURL, request) {
   const destinationURL = baseURL + '/list/prices/vsb';
   const init = {
     method: request.method,
@@ -65,7 +65,7 @@ async function vsbPrices(baseURL) {
     headers: response.headers,
   });
 }
-async function tconnectPrices(baseURL) {
+async function tconnectPrices(baseURL, request) {
   const destinationURL = baseURL + '/list/prices/tconnect';
   const init = {
     method: request.method,
@@ -78,7 +78,7 @@ async function tconnectPrices(baseURL) {
     headers: response.headers,
   });
 }
-async function recordingPrices(baseURL) {
+async function recordingPrices(baseURL, request) {
   const destinationURL = baseURL + '/list/prices/recording';
   const init = {
     method: request.method,
