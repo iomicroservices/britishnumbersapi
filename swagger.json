@@ -131,7 +131,7 @@
           {
             "name": "number",
             "in": "formData",
-            "description": "The number(s) you wish to purchase. Multiple numbers supported by repeating the query parametre.",
+            "description": "The number(s) you wish to purchase. Multiple numbers supported by repeating the query parameter.",
             "required": true,
             "type": "array",
             "items": {
@@ -198,7 +198,171 @@
           }
         }
       }
-    }
+    },
+    "/numbers/tariffs": {
+      "get": {
+        "tags": ["Telephone Numbers"],
+        "summary": "List Tariffs",
+        "description": "Retrieve a list of available tariffs for telephone numbers.",
+        "operationId": "listTariffs",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/numbers": {
+      "get": {
+        "tags": ["Telephone Numbers"],
+        "summary": "List Numbers on Account",
+        "description": "Retrieve a list of telephone numbers associated with the account.",
+        "operationId": "listNumbersOnAccount",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/TelephoneNumbers"
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/numbers/config/{number}": {
+      "get": {
+        "tags": ["Telephone Numbers"],
+        "summary": "List Number Config",
+        "description": "Retrieve configuration details for a specific telephone number.",
+        "operationId": "listNumberConfig",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "description": "The telephone number for which to retrieve configuration details.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/NumberConfig"
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/numbers/available/{partialnumber}": {
+      "get": {
+        "tags": ["Telephone Numbers"],
+        "summary": "List Available Numbers",
+        "description": "Retrieve a list of available telephone numbers that match the partial number provided.",
+        "operationId": "listAvailableNumbers",
+        "parameters": [
+          {
+            "name": "partialnumber",
+            "in": "path",
+            "description": "The partial telephone number to match against available numbers.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/TelephoneNumbers"
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/numbers/update": {
+      "post": {
+        "tags": ["Telephone Numbers"],
+        "summary": "Update Number Config",
+        "description": "Update the configuration of a telephone number.",
+        "operationId": "updateNumberConfig",
+        "consumes": ["application/json"],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "description": "The telephone number to update.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "blacklist",
+            "in": "body",
+            "description": "Turn blacklist on/off.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "description",
+            "in": "body",
+            "description": "Description (MAX 64 chars).",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "acr",
+            "in": "body",
+            "description": "Turn ACR (Anonymous Call Rejection) on/off.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "mcn",
+            "in": "body",
+            "description": "Turn MCN (Missed Call Notifications) on/off.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "dnis",
+            "in": "body",
+            "description": "Turn DNIS (Dialed Number Identification Service) on/off.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    // Add more endpoints for PURCHASE, PRICES, CALL WHISPER, VIRTUAL SWITCHBOARD, HUNT GROUPS, VOICEMAIL, GREETINGS, CALL STATS, BLACKLIST, HOLIDAYS as per your provided information
   },
   "securityDefinitions": {
     "basicAuth": {
@@ -232,22 +396,41 @@
       },
       "required": ["number", "price", "last_six", "available", "prefix"]
     },
-    "PurchaseRequest": {
+    "TelephoneNumbers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "NumberConfig": {
       "type": "object",
       "properties": {
-        "email": {
+        "number": {
           "type": "string",
-          "description": "Email address for purchase correspondence."
+          "description": "The telephone phone number."
         },
-        "numbers": {
-          "type": "array",
-          "description": "List of numbers to purchase.",
-          "items": {
-            "type": "string"
-          }
+        "blacklist": {
+          "type": "string",
+          "description": "Blacklist status (on/off)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description (MAX 64 chars)."
+        },
+        "acr": {
+          "type": "string",
+          "description": "ACR status (on/off)."
+        },
+        "mcn": {
+          "type": "string",
+          "description": "MCN status (on/off)."
+        },
+        "dnis": {
+          "type": "string",
+          "description": "DNIS status (on/off)."
         }
       },
-      "required": ["email", "numbers"]
+      "required": ["number", "blacklist", "description", "acr", "mcn", "dnis"]
     }
   }
 }
