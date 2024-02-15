@@ -45,7 +45,7 @@ export async function onRequestGet(context) {
     }
 
     // Construct the first API call URL
-    const searchMobileURL = `${baseURL}/rest/v1/mobile_numbers?select=number,price`;
+    const searchMobileURL = `${baseURL}/rest/v1/mobile_numbers?select=*`;
     const filters = [`available.eq.true`];
 
     if (price_gte && /^\d+(\.\d+)?$/.test(price_gte)) {
