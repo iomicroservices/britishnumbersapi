@@ -59,6 +59,10 @@ export async function onRequestGet(context) {
     } else {
         filters.push(`${type}.ilike.*${search}*`);
     }
+    if (network) {
+    filters.push(`network.eq.${network}`;
+    }
+
 
     const query = `&and=(${filters.join(',')})`;
     const destinationURL = `${searchMobileURL}${query}`;
