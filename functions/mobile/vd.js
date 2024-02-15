@@ -1,5 +1,5 @@
 export async function onRequestGet(context) {
-    const baseURL = context.env.DATABASE_BASE_URL;
+    const baseURL = context.env.VD_BASE_URL;
     const url = new URL(context.request.url);
     const apiKey = context.env.DATABASE_API_KEY;
     const searchParams = url.search;
@@ -16,7 +16,6 @@ export async function onRequestGet(context) {
     const params = url.searchParams;
     const type = params.get('type') || 'number';
     const search = params.get('search') || '247365';
-    const network = params.get('network') || null;
     const match = params.get('match') || null;
     const price_gte = params.get('price_gte') || null;
     const price_lte = params.get('price_lte') || null;
@@ -45,7 +44,7 @@ export async function onRequestGet(context) {
     }
 
     // Construct the first API call URL
-    const searchMobileURL = `${baseURL}/rest/v1/mobile_numbers?select=*`;
+    const searchMobileURL = `${baseURL}?select=*`;
     const filters = [`available.eq.true`];
 
     if (price_gte && /^\d+(\.\d+)?$/.test(price_gte)) {
@@ -59,10 +58,6 @@ export async function onRequestGet(context) {
     } else {
         filters.push(`${type}.ilike.*${search}*`);
     }
-    if (network) {
-    filters.push(`network.eq.${network}`;
-    }
-
 
     const query = `&and=(${filters.join(',')})`;
     const destinationURL = `${searchMobileURL}${query}`;
