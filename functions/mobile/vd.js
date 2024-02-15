@@ -22,7 +22,7 @@ export async function onRequestGet(context) {
     const params = url.searchParams;
     const type = params.get('type') || 'number';
     const search = params.get('search') || '247365';
-    const search = params.get('network') || null;
+    const network = params.get('network') || null;
     const match = params.get('match') || null;
     const price_gte = params.get('price_gte') || null;
     const price_lte = params.get('price_lte') || null;
