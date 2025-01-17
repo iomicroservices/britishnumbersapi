@@ -131,7 +131,10 @@ export async function onRequestGet(context) {
         // Return the response from the first API call
         return new Response(JSON.stringify(json), {
             status: firstResponse.status,  // Use the status of the first API response
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Range': contentRange || '',  // Include Content-Range if available, otherwise an empty string
+            },
         });
     } catch (error) {
         // Error handling for both API calls
