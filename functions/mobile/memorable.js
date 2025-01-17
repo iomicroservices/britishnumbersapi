@@ -1,3 +1,14 @@
+// Helper function to set headers
+function setBaseHeaders(baseHeaders, range, apiKey) {
+    baseHeaders.set('apikey', apiKey);
+    baseHeaders.set('Authorization', `Bearer ${apiKey}`);
+    if (range) {
+        baseHeaders.set('Range', range);
+    }
+    baseHeaders.set('Prefer', 'count=exact');
+    return baseHeaders;
+}
+
 // Helper function to validate price
 function validatePrice(price) {
     return price && /^\d+(\.\d+)?$/.test(price);
@@ -43,30 +54,25 @@ export async function onRequestGet(context) {
     const apiKey = context.env.DATABASE_API_KEY;
     const sourceUrl = context.request.headers.get('Referer') || 'unknown';
 
-    // Common headers pre-configured
-    const baseHeaders = new Headers({
-        'apikey': apiKey,
-        'Authorization': `Bearer ${apiKey}`,
-    });
-
     // Extract query parameters
-    const params = url.searchParams;
-    const type = params.get('type') || 'number';
-    const search = params.get('search') || '247365';
-    const match = params.get('match') || null;
-    const price_gte = params.get('price_gte') || null;
-    const price_lte = params.get('price_lte') || null;
-    const range = params.get('range') || null;
+    const params = {
+        type: url.searchParams.get('type') || 'number',
+        search: url.searchParams.get('search') || '247365',
+        match: url.searchParams.get('match') || null,
+        price_gte: url.searchParams.get('price_gte') || null,
+        price_lte: url.searchParams.get('price_lte') || null,
+        range: url.searchParams.get('range') || null,
+    };
 
     // Validate the URL parameters
     const errors = [];
-    if (!/^\d+$/.test(search)) errors.push('search parameter error: Search query must contain only numbers.');
-    if (type !== 'number' && type !== 'prefix' && type !== 'last_six') errors.push('last-six parameter error: Invalid type parameter. Use "number", "prefix", or "last_six".');
-    if (price_lte && !validatePrice(price_lte)) errors.push('price_lte parameter error: Invalid price_lte parameter. Use a valid number or decimal.');
-    if (price_gte && !validatePrice(price_gte)) errors.push('price_gte parameter error: Invalid price_gte parameter. Use a valid number or decimal.');
+    if (!/^\d+$/.test(params.search)) errors.push('search parameter error: Search query must contain only numbers.');
+    if (params.type !== 'number' && params.type !== 'prefix' && params.type !== 'last_six') errors.push('last-six parameter error: Invalid type parameter. Use "number", "prefix", or "last_six".');
+    if (params.price_lte && !validatePrice(params.price_lte)) errors.push('price_lte parameter error: Invalid price_lte parameter. Use a valid number or decimal.');
+    if (params.price_gte && !validatePrice(params.price_gte)) errors.push('price_gte parameter error: Invalid price_gte parameter. Use a valid number or decimal.');
     
     // Validate range
-    const rangeError = validateRange(range);
+    const rangeError = validateRange(params.range);
     if (rangeError) errors.push(rangeError);
 
     if (errors.length > 0) {
@@ -74,17 +80,16 @@ export async function onRequestGet(context) {
     }
 
     // Construct filters for the API call
-    const filters = constructFilters({ type, search, price_gte, price_lte, match });
+    const filters = constructFilters(params);
 
     // Construct the API URL
     const query = `&and=(${filters.join(',')})`;
     const destinationURL = `${baseURL}/rest/v1/mobile_numbers?select=*${query}`;
 
+    const baseHeaders = new Headers();
+    setBaseHeaders(baseHeaders, params.range, apiKey); // Set headers with the range if exists
+
     try {
-        // Add the range value as a header if it exists
-        if (range) baseHeaders.set('Range', range); // Adding the range header
-        
-        baseHeaders.set('Prefer', 'count=exact');
         const firstResponse = await fetch(destinationURL, {
             method: 'GET',
             headers: baseHeaders,
@@ -111,8 +116,8 @@ export async function onRequestGet(context) {
             method: 'POST',
             headers: baseHeaders,
             body: JSON.stringify({
-                search: search,
-                type: type,
+                search: params.search,
+                type: params.type,
                 count: totalCount,
                 source: sourceUrl,
                 mobile: 1,
