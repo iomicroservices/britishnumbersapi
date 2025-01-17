@@ -88,6 +88,12 @@ export async function onRequestGet(context) {
 
     try {
         // First API call to fetch data
+
+        // Add the range value as a header if it exists
+        if (range) {
+            baseHeaders.set('Range', range); // Adding the range header
+        }
+        
         baseHeaders.set('Prefer', 'count=exact');
         const firstResponse = await fetch(destinationURL, {
             method: 'GET',
@@ -99,7 +105,6 @@ export async function onRequestGet(context) {
         }
 
         const json = await firstResponse.json();
-
 
 
         const contentRange = firstResponse.headers.get('Content-Range');
