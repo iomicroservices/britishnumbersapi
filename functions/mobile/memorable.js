@@ -2,21 +2,13 @@ export async function onRequestGet(context) {
     const baseURL = context.env.DATABASE_BASE_URL;
     const url = new URL(context.request.url);
     const apiKey = context.env.DATABASE_API_KEY;
-    const searchParams = url.search;
     const sourceUrl = context.request.headers.get('Referer') || 'unknown';
     
-
     // Common headers pre-configured
     const baseHeaders = new Headers({
         'apikey': apiKey,
         'Authorization': `Bearer ${apiKey}`,
     });
-
-
-    // Check if the "range" parameter exists and is not null in the URL
-    if (url.searchParams.has('range') && url.searchParams.get('range') !== null) {
-        headers.set('Range', url.searchParams.get('range'));
-    }
 
     // Extract query parameters
     const params = url.searchParams;
