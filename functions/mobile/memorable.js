@@ -66,7 +66,7 @@ export async function onRequestGet(context) {
 
     // Validate the URL parameters
     const errors = [];
-    if (!/^\d+$/.test(params.search)) errors.push('search parameter error: Search query must contain only numbers.');
+    if (params.search !== null && !/^\d+$/.test(params.search)) errors.push('search parameter error: Search query must contain only numbers.');
     if (params.type !== 'number' && params.type !== 'prefix' && params.type !== 'last_six') errors.push('last-six parameter error: Invalid type parameter. Use "number", "prefix", or "last_six".');
     if (params.price_lte && !validatePrice(params.price_lte)) errors.push('price_lte parameter error: Invalid price_lte parameter. Use a valid number or decimal.');
     if (params.price_gte && !validatePrice(params.price_gte)) errors.push('price_gte parameter error: Invalid price_gte parameter. Use a valid number or decimal.');
