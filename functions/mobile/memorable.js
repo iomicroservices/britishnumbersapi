@@ -34,14 +34,20 @@ function validateRange(range) {
 
 // Helper function to construct filters
 function constructFilters({ type, search, price_gte, price_lte, match }) {
+    // Default type to 'number' and search to ilike.** if search is null or empty
+    type = type || 'number';  // Default type to 'number' if it's not provided
+    search = search || '**';  // Default search to '**' if it's not provided
+
     const filters = ['available.eq.true'];
 
     if (price_gte && validatePrice(price_gte)) filters.push(`price.gte.${price_gte}`);
     if (price_lte && validatePrice(price_lte)) filters.push(`price.lte.${price_lte}`);
+
+    // Construct the search filter
     if (match === 'exact') {
         filters.push(`${type}.eq.${search}`);
     } else {
-        filters.push(`${type}.ilike.*${search}*`);
+        filters.push(`${type}.ilike.*${search}*`);  // Apply ilike for fuzzy search or if no match is provided
     }
 
     return filters;
