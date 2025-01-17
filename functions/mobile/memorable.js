@@ -107,10 +107,7 @@ export async function onRequestGet(context) {
             const errorData = await firstResponse.json();
 
             // Construct the error message with the status and details
-            const errorMessage = `Database request failed with status: ${firstResponse.status}. 
-                                Error Code: ${errorData.code}, 
-                                Message: ${errorData.message}, 
-                                Details: ${errorData.details || 'No details available.'}`;
+            const errorMessage = `${firstResponse.status} database request failed with the following details: ${errorData.details || 'No details available.'}.`;
 
             // Throw the error with the detailed message
             throw new Error(errorMessage);
