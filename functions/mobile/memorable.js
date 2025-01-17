@@ -9,14 +9,14 @@ function validateRange(range) {
 
     const rangeParts = range.split('-');
     if (rangeParts.length !== 2 || !/^\d+$/.test(rangeParts[0]) || !/^\d+$/.test(rangeParts[1])) {
-        return 'Range must be in the format "number-number", with both numbers being integers.';
+        return 'range parameter error: Range must be in the format "number-number", with both numbers being integers.';
     }
 
     const start = parseInt(rangeParts[0], 10);
     const end = parseInt(rangeParts[1], 10);
 
-    if (start > end) return 'The first number in the range must be less than or equal to the second number.';
-    if ((end - start) > 100) return 'The range must not exceed 100 indexes (e.g., 0-99, 5-104).';
+    if (start > end) return 'range parameter error: The first number in the range must be less than or equal to the second number.';
+    if ((end - start) > 100) return 'range parameter error: The range must not exceed 100 indexes (e.g., 0-99, 5-104).';
 
     return null;
 }
@@ -60,11 +60,11 @@ export async function onRequestGet(context) {
 
     // Validate the URL parameters
     const errors = [];
-    if (!/^\d+$/.test(search)) errors.push('Search query must contain only numbers.');
-    if (type !== 'number' && type !== 'prefix' && type !== 'last_six') errors.push('Invalid type parameter. Use "number", "prefix", or "last_six".');
-    if (price_lte && !validatePrice(price_lte)) errors.push('Invalid price_lte parameter. Use a valid number or decimal.');
-    if (price_gte && !validatePrice(price_gte)) errors.push('Invalid price_gte parameter. Use a valid number or decimal.');
-    if (match && match !== 'exact') errors.push('Invalid match parameter. Use "exact" or leave it blank.');
+    if (!/^\d+$/.test(search)) errors.push('search parameter error: Search query must contain only numbers.');
+    if (type !== 'number' && type !== 'prefix' && type !== 'last_six') errors.push('last-six parameter error: Invalid type parameter. Use "number", "prefix", or "last_six".');
+    if (price_lte && !validatePrice(price_lte)) errors.push('price_lte parameter error: Invalid price_lte parameter. Use a valid number or decimal.');
+    if (price_gte && !validatePrice(price_gte)) errors.push('price_gte parameter error: Invalid price_gte parameter. Use a valid number or decimal.');
+    if (match && match !== 'exact') errors.push('match parameter error: Invalid match parameter. Use "exact" or leave it blank.');
     
     // Validate range
     const rangeError = validateRange(range);
