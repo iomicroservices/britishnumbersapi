@@ -57,7 +57,7 @@ export async function onRequestGet(context) {
     // Extract query parameters
     const params = {
         type: url.searchParams.get('type') || 'number',
-        search: url.searchParams.get('search') || '247365',
+        search: url.searchParams.get('search') || null,
         match: url.searchParams.get('match') || null,
         price_gte: url.searchParams.get('price_gte') || null,
         price_lte: url.searchParams.get('price_lte') || null,
@@ -123,6 +123,7 @@ export async function onRequestGet(context) {
                 mobile: 1,
                 landline: 0,
                 result: JSON.stringify(json),
+                match: params.match,
             }),
         });
 
