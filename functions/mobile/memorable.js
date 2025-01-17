@@ -110,6 +110,7 @@ export async function onRequestGet(context) {
 
         // Second API call to log/create a new search record
         const newSearchURL = `${baseURL}/rest/v1/search_queries`;
+        const matchValue = (params.match === 'exact') ? 'exact' : 'fuzzy'; // Determine if match should be 'exact' or 'fuzzy'
         baseHeaders.set('Content-Type', 'application/json');
         baseHeaders.set('Prefer', 'return=minimal');
         await fetch(newSearchURL, {
@@ -123,7 +124,7 @@ export async function onRequestGet(context) {
                 mobile: 1,
                 landline: 0,
                 result: JSON.stringify(json),
-                match: params.match,
+                match: matchValue,
             }),
         });
 
