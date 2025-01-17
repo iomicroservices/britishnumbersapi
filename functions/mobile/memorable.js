@@ -101,8 +101,19 @@ export async function onRequestGet(context) {
             headers: baseHeaders,
         });
 
+        // Check if the first response is not OK
         if (!firstResponse.ok) {
-            throw new Error(`Database request failed with status: ${firstResponse.status}`);
+            // Parse the JSON response to get the details
+            const errorData = await firstResponse.json();
+
+            // Construct the error message with the status and details
+            const errorMessage = `Database request failed with status: ${firstResponse.status}. 
+                                Error Code: ${errorData.code}, 
+                                Message: ${errorData.message}, 
+                                Details: ${errorData.details || 'No details available.'}`;
+
+            // Throw the error with the detailed message
+            throw new Error(errorMessage);
         }
 
         const json = await firstResponse.json();
