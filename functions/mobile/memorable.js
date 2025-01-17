@@ -1,9 +1,48 @@
+// Helper function to validate price
+function validatePrice(price) {
+    return price && /^\d+(\.\d+)?$/.test(price);
+}
+
+// Helper function to validate range
+function validateRange(range) {
+    if (!range) return null;
+
+    const rangeParts = range.split('-');
+    if (rangeParts.length !== 2 || !/^\d+$/.test(rangeParts[0]) || !/^\d+$/.test(rangeParts[1])) {
+        return 'Range must be in the format "number-number", with both numbers being integers.';
+    }
+
+    const start = parseInt(rangeParts[0], 10);
+    const end = parseInt(rangeParts[1], 10);
+
+    if (start > end) return 'The first number in the range must be less than or equal to the second number.';
+    if ((end - start) > 100) return 'The range must not exceed 100 indexes (e.g., 0-99, 5-104).';
+
+    return null;
+}
+
+// Helper function to construct filters
+function constructFilters({ type, search, price_gte, price_lte, match }) {
+    const filters = ['available.eq.true'];
+
+    if (price_gte && validatePrice(price_gte)) filters.push(`price.gte.${price_gte}`);
+    if (price_lte && validatePrice(price_lte)) filters.push(`price.lte.${price_lte}`);
+    if (match === 'exact') {
+        filters.push(`${type}.eq.${search}`);
+    } else {
+        filters.push(`${type}.ilike.*${search}*`);
+    }
+
+    return filters;
+}
+
+// Main function
 export async function onRequestGet(context) {
     const baseURL = context.env.DATABASE_BASE_URL;
     const url = new URL(context.request.url);
     const apiKey = context.env.DATABASE_API_KEY;
     const sourceUrl = context.request.headers.get('Referer') || 'unknown';
-    
+
     // Common headers pre-configured
     const baseHeaders = new Headers({
         'apikey': apiKey,
@@ -21,70 +60,30 @@ export async function onRequestGet(context) {
 
     // Validate the URL parameters
     const errors = [];
-
-    if (!/^\d+$/.test(search)) {
-        errors.push('Search query must contain only numbers.');
-    }
-    if (type !== 'number' && type !== 'prefix' && type !== 'last_six') {
-        errors.push('Invalid type parameter. Use "number", "prefix", or "last_six".');
-    }
-    if (price_lte && !/^\d+(\.\d+)?$/.test(price_lte)) {
-        errors.push('Invalid price_lte parameter. Use a valid number or decimal.');
-    }
-    if (price_gte && !/^\d+(\.\d+)?$/.test(price_gte)) {
-        errors.push('Invalid price_gte parameter. Use a valid number or decimal.');
-    }
-    if (match && match !== 'exact') {
-        errors.push('Invalid match parameter. Use "exact" or leave it blank.');
-    }
-    if (range) {
-        const rangeParts = range.split('-');
-        
-        if (rangeParts.length !== 2 || !/^\d+$/.test(rangeParts[0]) || !/^\d+$/.test(rangeParts[1])) {
-            errors.push('Range must be in the format "number-number", with both numbers being integers.');
-        } else {
-            const start = parseInt(rangeParts[0], 10);
-            const end = parseInt(rangeParts[1], 10);
-
-            if (start > end) {
-                errors.push('The first number in the range must be less than or equal to the second number.');
-            }
-            if ((end - start) > 100) {
-                errors.push('The range must not exceed 100 indexes (e.g., 0-99, 5-104).');
-            }
-        }
-    }
+    if (!/^\d+$/.test(search)) errors.push('Search query must contain only numbers.');
+    if (type !== 'number' && type !== 'prefix' && type !== 'last_six') errors.push('Invalid type parameter. Use "number", "prefix", or "last_six".');
+    if (price_lte && !validatePrice(price_lte)) errors.push('Invalid price_lte parameter. Use a valid number or decimal.');
+    if (price_gte && !validatePrice(price_gte)) errors.push('Invalid price_gte parameter. Use a valid number or decimal.');
+    if (match && match !== 'exact') errors.push('Invalid match parameter. Use "exact" or leave it blank.');
+    
+    // Validate range
+    const rangeError = validateRange(range);
+    if (rangeError) errors.push(rangeError);
 
     if (errors.length > 0) {
         return new Response(errors.join('\n'), { status: 400 });
     }
 
-    // Construct the first API call URL
-    const searchMobileURL = `${baseURL}/rest/v1/mobile_numbers?select=*`;
-    const filters = [`available.eq.true`];
+    // Construct filters for the API call
+    const filters = constructFilters({ type, search, price_gte, price_lte, match });
 
-    if (price_gte && /^\d+(\.\d+)?$/.test(price_gte)) {
-        filters.push(`price.gte.${price_gte}`);
-    }
-    if (price_lte && /^\d+(\.\d+)?$/.test(price_lte)) {
-        filters.push(`price.lte.${price_lte}`);
-    }
-    if (match === 'exact') {
-        filters.push(`${type}.eq.${search}`);
-    } else {
-        filters.push(`${type}.ilike.*${search}*`);
-    }
-
+    // Construct the API URL
     const query = `&and=(${filters.join(',')})`;
-    const destinationURL = `${searchMobileURL}${query}`;
+    const destinationURL = `${baseURL}/rest/v1/mobile_numbers?select=*${query}`;
 
     try {
-        // First API call to fetch data
-
         // Add the range value as a header if it exists
-        if (range) {
-            baseHeaders.set('Range', range); // Adding the range header
-        }
+        if (range) baseHeaders.set('Range', range); // Adding the range header
         
         baseHeaders.set('Prefer', 'count=exact');
         const firstResponse = await fetch(destinationURL, {
@@ -97,26 +96,21 @@ export async function onRequestGet(context) {
         }
 
         const json = await firstResponse.json();
-
-
         const contentRange = firstResponse.headers.get('Content-Range');
         let totalCount = 0;
-        
+
         if (contentRange) {
-            // Extracts the total count after the last '/'
             const parts = contentRange.split('/');
-            if (parts.length > 1) {
-                totalCount = parts[1]; // The part after '/' is the total count
-            }
+            if (parts.length > 1) totalCount = parts[1]; // The part after '/' is the total count
         }
-        
+
         // Second API call to log/create a new search record
         const newSearchURL = `${baseURL}/rest/v1/search_queries`;
-        baseHeaders.set('Content-Type', 'application/json'); 
+        baseHeaders.set('Content-Type', 'application/json');
         baseHeaders.set('Prefer', 'return=minimal');
         await fetch(newSearchURL, {
             method: 'POST',
-            headers: baseHeaders, 
+            headers: baseHeaders,
             body: JSON.stringify({
                 search: search,
                 type: type,
@@ -124,7 +118,7 @@ export async function onRequestGet(context) {
                 source: sourceUrl,
                 mobile: 1,
                 landline: 0,
-                result: JSON.stringify(json), 
+                result: JSON.stringify(json),
             }),
         });
 
