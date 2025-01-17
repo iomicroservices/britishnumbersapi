@@ -23,12 +23,6 @@ function validateRange(range) {
         return 'range parameter error: Range must be in the format "number-number", with both numbers being integers.';
     }
 
-    const start = parseInt(rangeParts[0], 10);
-    const end = parseInt(rangeParts[1], 10);
-
-    if (start > end) return 'range parameter error: The first number in the range must be less than or equal to the second number.';
-
-    return null;
 }
 
 // Helper function to construct filters
