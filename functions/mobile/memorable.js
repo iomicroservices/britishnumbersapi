@@ -130,7 +130,7 @@ export async function onRequestGet(context) {
 
         // Return the response from the first API call
         return new Response(JSON.stringify(json), {
-            status: 200,
+            status: firstResponse.status,  // Use the status of the first API response
             headers: { 'Content-Type': 'application/json' },
         });
     } catch (error) {
