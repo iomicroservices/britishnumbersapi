@@ -64,7 +64,6 @@ export async function onRequestGet(context) {
     if (type !== 'number' && type !== 'prefix' && type !== 'last_six') errors.push('last-six parameter error: Invalid type parameter. Use "number", "prefix", or "last_six".');
     if (price_lte && !validatePrice(price_lte)) errors.push('price_lte parameter error: Invalid price_lte parameter. Use a valid number or decimal.');
     if (price_gte && !validatePrice(price_gte)) errors.push('price_gte parameter error: Invalid price_gte parameter. Use a valid number or decimal.');
-    if (match && match !== 'exact') errors.push('match parameter error: Invalid match parameter. Use "exact" or leave it blank.');
     
     // Validate range
     const rangeError = validateRange(range);
