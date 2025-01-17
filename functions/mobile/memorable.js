@@ -27,7 +27,6 @@ function validateRange(range) {
     const end = parseInt(rangeParts[1], 10);
 
     if (start > end) return 'range parameter error: The first number in the range must be less than or equal to the second number.';
-    if ((end - start) > 100) return 'range parameter error: The range must not exceed 100 indexes (e.g., 0-99, 5-104).';
 
     return null;
 }
@@ -107,7 +106,7 @@ export async function onRequestGet(context) {
             const errorData = await firstResponse.json();
 
             // Construct the error message with the status and details
-            const errorMessage = `${firstResponse.status} database request failed with the following details: ${errorData.details || 'No details available.'}.`;
+            const errorMessage = `${firstResponse.status} database request failed with the following details: ${errorData.details || 'No details available.'}`;
 
             // Throw the error with the detailed message
             throw new Error(errorMessage);
