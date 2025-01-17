@@ -25,6 +25,7 @@ export async function onRequestGet(context) {
     const match = params.get('match') || null;
     const price_gte = params.get('price_gte') || null;
     const price_lte = params.get('price_lte') || null;
+    const range = params.get('range') || null;
 
     // Validate the URL parameters
     const errors = [];
@@ -43,6 +44,23 @@ export async function onRequestGet(context) {
     }
     if (match && match !== 'exact') {
         errors.push('Invalid match parameter. Use "exact" or leave it blank.');
+    }
+    if (range) {
+        const rangeParts = range.split('-');
+        
+        if (rangeParts.length !== 2 || !/^\d+$/.test(rangeParts[0]) || !/^\d+$/.test(rangeParts[1])) {
+            errors.push('Range must be in the format "number-number", with both numbers being integers.');
+        } else {
+            const start = parseInt(rangeParts[0], 10);
+            const end = parseInt(rangeParts[1], 10);
+
+            if (start > end) {
+                errors.push('The first number in the range must be less than or equal to the second number.');
+            }
+            if ((end - start) > 100) {
+                errors.push('The range must not exceed 100 indexes (e.g., 0-99, 5-104).');
+            }
+        }
     }
 
     if (errors.length > 0) {
