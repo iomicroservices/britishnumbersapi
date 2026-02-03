@@ -11,7 +11,7 @@ module.exports = (req, res) => {
     help: {
       availableVersions: ["v1", "v2"],
       example: `${basePath}/v2/mobile/memorable`,
-      docs: "/swagger.json"
+      docs: "https://api.britishnumbers.com"
     }
   };
 
