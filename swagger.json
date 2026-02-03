@@ -4,7 +4,7 @@
     "description": "The British Numbers API gives you access to the largest database of UK mobile numbers available for sale. It's designed to make finding and buying numbers easy and straightforward for our partners.",
     "version": "2.0.1",
     "title": "British Numbers API",
-    "termsOfService": "https://britishnumbers.com/terms-of-service",
+    "termsOfService": "https://api.britishnumbers.com/terms-of-service",
     "contact": {
       "email": "info@britishnumbers.com"
     },
@@ -19,10 +19,6 @@
     {
       "name": "Mobile Numbers",
       "description": "Search and purchase mobile numbers available in the UK."
-    },
-    {
-      "name": "Telephone Numbers",
-      "description": "Search and purchase telephone numbers available in the UK."
     }
   ],
   "schemes": ["https"],
