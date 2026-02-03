@@ -14,7 +14,7 @@
     }
   },
   "host": "api.britishnumbers.com",
-  "basePath": "/",
+  "basePath": "/rest/v2",
   "tags": [
     {
       "name": "Mobile Numbers",
