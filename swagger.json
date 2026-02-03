@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "description": "The British Numbers API gives you access to millions of UK phone and mobile numbers available for sale. It's designed to make finding and buying numbers easy and straightforward for our partners.",
+    "description": "The British Numbers API gives you access to the largest database of mobile numbers available for sale in the UK. It's designed to make finding and buying numbers easy and straightforward for our partners.",
     "version": "2.0.1",
     "title": "British Numbers API",
     "termsOfService": "https://britishnumbers.com/terms-of-service",
