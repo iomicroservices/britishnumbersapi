@@ -1,0 +1,28 @@
+# Copy this file to .dev.vars and fill in your real values.
+# .dev.vars is used by Wrangler for LOCAL development only (wrangler pages dev).
+# Do not commit .dev.vars — it is in .gitignore.
+#
+# In production, set these in Cloudflare Dashboard:
+# Pages project → Settings → Environment variables (and Secrets for sensitive values).
+#
+# Variable names must match what the code expects in context.env.*
+
+# Database (Supabase or similar) — used by mobile memorable, auth, vd
+DATABASE_BASE_URL=
+DATABASE_API_KEY=
+
+# Telephone API — used by v2/telephone/* endpoints
+TELEPHONE_BASE_URL=
+TELEPHONE_API_KEY=
+
+# VD (virtual directory?) — used by v2/mobile/vd
+VD_BASE_URL=
+
+# Webhooks — used by purchase endpoints
+PURCHASE_WEBHOOK_BASE_URL=
+
+# Memorable webhook / service — used by v1 memorable endpoints
+MEMORABLE_WEBHOOK_BASE_URL=
+
+# Custom webhook - to be used by v2 custom
+CUSTOM_WEBHOOK_BASE_URL=

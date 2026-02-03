@@ -1,0 +1,21 @@
+# Environment and secrets — do not commit
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Wrangler (local dev only — production uses Cloudflare Dashboard config)
+wrangler.toml
+.wrangler/
+
+# Dependencies and build
+node_modules/
+
+# Editor and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,12 @@
+# Copy to wrangler.toml for local development only.
+# Do not commit wrangler.toml — production uses Cloudflare Dashboard config.
+# See: https://developers.cloudflare.com/pages/functions/wrangler-configuration/
+
+name = "britishnumbersapi"
+pages_build_output_dir = "./dist"
+compatibility_date = "2025-02-01"
+
+# Non-secret variables can be set here. For secrets (API keys, URLs with keys),
+# use .dev.vars for local dev and Cloudflare Dashboard for production.
+# [vars]
+# EXAMPLE_VAR = "value"
