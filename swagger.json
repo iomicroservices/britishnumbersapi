@@ -79,7 +79,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation",
+            "description": "All matching data has been returned (full result set).",
+            "headers": {
+              "Content-Range": {
+                "description": "Pagination: range of items returned and total count, in format start-end/total (e.g. 0-9/100 for first 10 of 100 matches). Use the range query parameter to request a different slice.",
+                "type": "string"
+              }
+            },
             "schema": {
               "$ref": "#/definitions/MobileNumber"
             },
@@ -100,6 +106,18 @@
                   "prefix": "075477"
                 }
               ]
+            }
+          },
+          "206": {
+            "description": "Partial content. More matching data exists; only part of the result set has been returned. Use the range query parameter to request further slices.",
+            "headers": {
+              "Content-Range": {
+                "description": "Pagination: range of items returned and total count, in format start-end/total (e.g. 0-9/100 for first 10 of 100 matches).",
+                "type": "string"
+              }
+            },
+            "schema": {
+              "$ref": "#/definitions/MobileNumber"
             }
           },
           "400": {

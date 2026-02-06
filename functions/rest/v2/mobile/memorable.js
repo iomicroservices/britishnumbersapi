@@ -11,7 +11,7 @@ function setBaseHeaders(baseHeaders, range, apiKey) {
 
 // Helper function to validate price
 function validatePrice(price) {
-    return price && /^\d+(\.\d+)?$/.test(price);
+    return price && price.length <= 15 && /^\d+(\.\d+)?$/.test(price);
 }
 
 // Helper function to validate range
@@ -20,9 +20,8 @@ function validateRange(range) {
 
     const rangeParts = range.split('-');
     if (rangeParts.length !== 2 || !/^\d+$/.test(rangeParts[0]) || !/^\d+$/.test(rangeParts[1])) {
-        return 'range parameter error: Range must be in the format "number-number", with both numbers being integers.';
+        return 'range parameter error: Range must be in the format "number-number", with both numbers being integers. Omitting this parameter will return the first 100 results. Maximum of 100 results can be returned at a time.';
     }
-
 }
 
 // Helper function to construct filters
@@ -65,10 +64,11 @@ export async function onRequestGet(context) {
 
     // Validate the URL parameters
     const errors = [];
-    if (params.search !== null && !/^\d+$/.test(params.search)) errors.push('search parameter error: Search query must contain only numbers.');
-    if (params.type !== 'number' && params.type !== 'prefix' && params.type !== 'last_six') errors.push('last-six parameter error: Invalid type parameter. Use "number", "prefix", or "last_six".');
-    if (params.price_lte && !validatePrice(params.price_lte)) errors.push('price_lte parameter error: Invalid price_lte parameter. Use a valid number or decimal.');
-    if (params.price_gte && !validatePrice(params.price_gte)) errors.push('price_gte parameter error: Invalid price_gte parameter. Use a valid number or decimal.');
+    if (params.search !== null && (!/^\d+$/.test(params.search) || params.search.length > 11)) errors.push('search parameter error: search query must contain only numbers (0-9) of no more than 11 characters.');
+    if (params.type !== 'number' && params.type !== 'prefix' && params.type !== 'last_six') errors.push('type parameter error: type query must be "number", "prefix", or "last_six". Omitting this parameter will default to "number".');
+    if (params.match !== null && params.match !== '' && params.match !== 'exact' && params.match !== 'fuzzy') errors.push('match parameter error: match query must be "exact" or "fuzzy". Omitting this parameter will default to "fuzzy".');
+    if (params.price_lte && !validatePrice(params.price_lte)) errors.push('price_lte parameter error: price_lte query must be a valid number or decimal of no more than 15 characters, or can be omitted.');
+    if (params.price_gte && !validatePrice(params.price_gte)) errors.push('price_gte parameter error: price_gte parameter must be a valid number or decimal of no more than 15 characters, or can be omitted.');
     
     // Validate range
     const rangeError = validateRange(params.range);
@@ -130,7 +130,7 @@ export async function onRequestGet(context) {
                 source: sourceUrl,
                 mobile: 1,
                 landline: 0,
-                result: JSON.stringify(json),
+                // result: JSON.stringify(json),
                 match: matchValue,
             }),
         });
