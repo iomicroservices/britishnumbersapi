@@ -82,7 +82,7 @@
             "description": "All matching data has been returned (full result set).",
             "headers": {
               "Content-Range": {
-                "description": "Pagination: range of items returned and total count, in format start-end/total (e.g. 0-9/100 for first 10 of 100 matches). Use the range query parameter to request a different slice.",
+                "description": "Range of items returned and total count for pagination, in format start-end/total (e.g. 0-9/100 for first 10 of 100 matches). Use the range query parameter to request a different slice of results.",
                 "type": "string"
               }
             },
@@ -92,18 +92,11 @@
             "examples": {
               "application/json": [
                 {
-                  "number": "07927777776",
-                  "price": 625,
-                  "last_six": "777776",
+                  "number": "string",
+                  "price": 0,
+                  "last_six": "string",
                   "available": true,
-                  "prefix": "079277"
-                },
-                {
-                  "number": "07547777776",
-                  "price": 750,
-                  "last_six": "777776",
-                  "available": true,
-                  "prefix": "075477"
+                  "prefix": "string"
                 }
               ]
             }
@@ -112,12 +105,23 @@
             "description": "Partial content. More matching data exists; only part of the result set has been returned. Use the range query parameter to request further slices.",
             "headers": {
               "Content-Range": {
-                "description": "Pagination: range of items returned and total count, in format start-end/total (e.g. 0-9/100 for first 10 of 100 matches).",
+                "description": "Range of items returned and total count for pagination, in format start-end/total (e.g. 0-9/100 for first 10 of 100 matches). Use the range query parameter to request a different slice of results.",
                 "type": "string"
               }
             },
             "schema": {
               "$ref": "#/definitions/MobileNumber"
+            },
+            "examples": {
+              "application/json": [
+                {
+                  "number": "string",
+                  "price": 0,
+                  "last_six": "string",
+                  "available": true,
+                  "prefix": "string"
+                }
+              ]
             }
           },
           "400": {
