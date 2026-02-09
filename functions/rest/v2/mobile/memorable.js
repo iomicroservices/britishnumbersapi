@@ -2,26 +2,67 @@
 function setBaseHeaders(baseHeaders, range, apiKey) {
     baseHeaders.set('apikey', apiKey);
     baseHeaders.set('Authorization', `Bearer ${apiKey}`);
-    if (range) {
-        baseHeaders.set('Range', range);
-    }
+    if (range) baseHeaders.set('Range', range);
     baseHeaders.set('Prefer', 'count=exact');
     return baseHeaders;
 }
 
-// Helper function to validate price
-function validatePrice(price) {
-    return price && price.length <= 15 && /^\d+(\.\d+)?$/.test(price);
-}
+// Validation rules: each returns an error message or null
+const VALIDATIONS = {
+    searchDigits: (params) =>
+        params.search !== null && !/^\d+$/.test(params.search)
+            ? 'search: must contain only digits (0-9).'
+            : null,
+    searchLength: (params) => {
+        if (params.search === null) return null;
+        // Global max 11 chars; stricter (6) for prefix/last_six
+        const maxLen = (params.type === 'prefix' || params.type === 'last_six') ? 6 : 11;
+        return params.search.length > maxLen ? `search: must be at most ${maxLen} characters for type "${params.type}".` : null;
+    },
+    type: (params) =>
+        params.type !== 'number' && params.type !== 'prefix' && params.type !== 'last_six'
+            ? 'type: must be "number", "prefix", or "last_six". Omit to default to "number".'
+            : null,
+    match: (params) =>
+        params.match !== null && params.match !== '' && params.match !== 'exact' && params.match !== 'fuzzy'
+            ? 'match: must be "exact" or "fuzzy". Omit to default to "fuzzy".'
+            : null,
+    isValidPrice: (price) => {
+        return price && price.length <= 15 && /^\d+(\.\d+)?$/.test(price);
+    },
+    price: (value, paramName) => {
+        if (!value) return null;
+        return this.isValidPrice(value) ? null : `${paramName}: must be a valid number or decimal, max 15 characters, or omitted.`;
+    },
+    priceLte: (params) => VALIDATIONS.price(params.price_lte, 'price_lte'),
+    priceGte: (params) => VALIDATIONS.price(params.price_gte, 'price_gte'),
+    range: (params) => {
+        const range = params.range;
+        if (!range) return null;
+        const parts = range.split('-');
+        if (parts.length !== 2 || !/^\d+$/.test(parts[0]) || !/^\d+$/.test(parts[1])) {
+            return 'range: must be "start-end" (two integers). Omit for first 100 results. Max 100 results per request.';
+        }
+        return null;
+    },
+};
 
-// Helper function to validate range
-function validateRange(range) {
-    if (!range) return null;
-
-    const rangeParts = range.split('-');
-    if (rangeParts.length !== 2 || !/^\d+$/.test(rangeParts[0]) || !/^\d+$/.test(rangeParts[1])) {
-        return 'range parameter error: Range must be in the format "number-number", with both numbers being integers. Omitting this parameter will return the first 100 results. Maximum of 100 results can be returned at a time.';
+function validateParams(params) {
+    const errors = [];
+    const checks = [
+        () => VALIDATIONS.searchDigits(params),
+        () => VALIDATIONS.type(params),
+        () => VALIDATIONS.searchLength(params),
+        () => VALIDATIONS.match(params),
+        () => VALIDATIONS.priceLte(params),
+        () => VALIDATIONS.priceGte(params),
+        () => VALIDATIONS.range(params),
+    ];
+    for (const check of checks) {
+        const msg = check();
+        if (msg) errors.push(msg);
     }
+    return errors;
 }
 
 // Helper function to construct filters
@@ -32,8 +73,9 @@ function constructFilters({ type, search, price_gte, price_lte, match }) {
 
     const filters = ['available.eq.true'];
 
-    if (price_gte && validatePrice(price_gte)) filters.push(`price.gte.${price_gte}`);
-    if (price_lte && validatePrice(price_lte)) filters.push(`price.lte.${price_lte}`);
+    // Construct the price filter
+    if (price_gte && VALIDATIONS.isValidPrice(price_gte)) filters.push(`price.gte.${price_gte}`);
+    if (price_lte && VALIDATIONS.isValidPrice(price_lte)) filters.push(`price.lte.${price_lte}`);
 
     // Construct the search filter
     if (match === 'exact') {
@@ -62,18 +104,7 @@ export async function onRequestGet(context) {
         range: url.searchParams.get('range') || null,
     };
 
-    // Validate the URL parameters
-    const errors = [];
-    if (params.search !== null && (!/^\d+$/.test(params.search) || params.search.length > 11)) errors.push('search parameter error: search query must contain only numbers (0-9) of no more than 11 characters.');
-    if (params.type !== 'number' && params.type !== 'prefix' && params.type !== 'last_six') errors.push('type parameter error: type query must be "number", "prefix", or "last_six". Omitting this parameter will default to "number".');
-    if (params.match !== null && params.match !== '' && params.match !== 'exact' && params.match !== 'fuzzy') errors.push('match parameter error: match query must be "exact" or "fuzzy". Omitting this parameter will default to "fuzzy".');
-    if (params.price_lte && !validatePrice(params.price_lte)) errors.push('price_lte parameter error: price_lte query must be a valid number or decimal of no more than 15 characters, or can be omitted.');
-    if (params.price_gte && !validatePrice(params.price_gte)) errors.push('price_gte parameter error: price_gte parameter must be a valid number or decimal of no more than 15 characters, or can be omitted.');
-    
-    // Validate range
-    const rangeError = validateRange(params.range);
-    if (rangeError) errors.push(rangeError);
-
+    const errors = validateParams(params);
     if (errors.length > 0) {
         return new Response(errors.join('\n'), { status: 400 });
     }
@@ -81,6 +112,10 @@ export async function onRequestGet(context) {
     // Construct filters for the API call
     const filters = constructFilters(params);
 
+    // Check if the base URL or API key is not set
+    if (!baseURL || !apiKey) {
+        return new Response(JSON.stringify({ error: 'Service misconfigured' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    }
     // Construct the API URL
     const query = `&and=(${filters.join(',')})`;
     const destinationURL = `${baseURL}/rest/v1/mobile_numbers?select=*${query}`;
@@ -96,44 +131,37 @@ export async function onRequestGet(context) {
 
         // Check if the first response is not OK
         if (!firstResponse.ok) {
-            // Parse the JSON response to get the details
-            const errorData = await firstResponse.json();
-
-            // Construct the error message with the status and details
-            const errorMessage = `${firstResponse.status} database request failed with the following details: ${errorData.details || 'No details available.'}`;
-
-            // Throw the error with the detailed message
-            throw new Error(errorMessage);
+            const errorData = await firstResponse.json().catch(() => ({}));
+            console.error('Supabase request failed:', firstResponse.status, errorData);
+            return new Response(JSON.stringify({ error: 'Search request failed. Please try again.' }), {
+                status: 502,
+                headers: { 'Content-Type': 'application/json' },
+            });
         }
 
         const json = await firstResponse.json();
-        const contentRange = firstResponse.headers.get('Content-Range');
-        let totalCount = 0;
+        const contentRange = firstResponse.headers.get('Content-Range') || '';
+        const totalCount = contentRange.includes('/') ? contentRange.split('/')[1] : 0;
 
-        if (contentRange) {
-            const parts = contentRange.split('/');
-            if (parts.length > 1) totalCount = parts[1]; // The part after '/' is the total count
-        }
-
-        // Second API call to log/create a new search record
-        const newSearchURL = `${baseURL}/rest/v1/search_queries`;
-        const matchValue = (params.match === 'exact') ? 'exact' : 'fuzzy'; // Determine if match should be 'exact' or 'fuzzy'
-        baseHeaders.set('Content-Type', 'application/json');
-        baseHeaders.set('Prefer', 'return=minimal');
-        await fetch(newSearchURL, {
-            method: 'POST',
-            headers: baseHeaders,
-            body: JSON.stringify({
-                search: params.search,
-                type: params.type,
-                count: totalCount,
-                source: sourceUrl,
-                mobile: 1,
-                landline: 0,
-                // result: JSON.stringify(json),
-                match: matchValue,
-            }),
+        // Log search in background so response returns immediately (no await)
+        const matchValue = params.match === 'exact' ? 'exact' : 'fuzzy';
+        const logHeaders = new Headers(baseHeaders);
+        logHeaders.set('Content-Type', 'application/json');
+        logHeaders.set('Prefer', 'return=minimal');
+        const logBody = JSON.stringify({
+            search: params.search,
+            type: params.type,
+            count: totalCount,
+            source: sourceUrl,
+            mobile: 1,
+            landline: 0,
+            match: matchValue,
         });
+        if (context.waitUntil) {
+            context.waitUntil(fetch(`${baseURL}/rest/v1/search_queries`, { method: 'POST', headers: logHeaders, body: logBody }));
+        } else {
+            fetch(`${baseURL}/rest/v1/search_queries`, { method: 'POST', headers: logHeaders, body: logBody });
+        }
 
         // Return the response from the first API call
         return new Response(JSON.stringify(json), {
@@ -144,7 +172,10 @@ export async function onRequestGet(context) {
             },
         });
     } catch (error) {
-        // Error handling for both API calls
-        return new Response(`Error: ${error.message}`, { status: 500 });
+        console.error('Memorable search error:', error);
+        return new Response(JSON.stringify({ error: 'An unexpected error occurred. Please try again.' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
 }

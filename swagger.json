@@ -35,8 +35,8 @@
           {
             "name": "search",
             "in": "query",
-            "description": "Your search query, consisting of numbers/integers, used to find specific memorable mobile numbers",
-            "required": true,
+            "description": "Your search query, consisting of numbers/integers, . Max 11 characters for type 'number', 6 characters for type 'prefix' or 'last_six'.",
+            "required": false,
             "type": "string"
           },
           {
@@ -50,29 +50,29 @@
           {
             "name": "match",
             "in": "query",
-            "description": "Specifies the match type: select 'exact' for precise matching. Without this, the search performs a fuzzy match.",
+            "description": "Specifies the match type: select 'exact' for precise matching. By default, set to 'fuzzy' which performs a fuzzy match.",
             "required": false,
             "type": "string",
-            "enum": ["exact"]
+            "enum": ["exact", "fuzzy"]
           },
           {
             "name": "price_gte",
             "in": "query",
-            "description": "Filter by price (greater than or equal to).",
+            "description": "Filter by price (greater than or equal to). Max 15 characters. Must be a valid number or decimal.",
             "required": false,
             "type": "number"
           },
           {
             "name": "price_lte",
             "in": "query",
-            "description": "Filter by price (less than or equal to).",
+            "description": "Filter by price (less than or equal to). Max 15 characters. Must be a valid number or decimal.",
             "required": false,
             "type": "number"
           },
           {
             "name": "range",
             "in": "query",
-            "description": "Defines the subset of results for pagination, specifying the range with a 'start-end' format. Max 100 results per query.",
+            "description": "Defines the subset of results for pagination, specifying the range with a 'start-end' format of two integers. Omit for first 100 results. Max 100 results per query.",
             "required": false,
             "type": "string"
           }
@@ -125,7 +125,19 @@
             }
           },
           "400": {
-            "description": "Invalid input"
+            "description": "Bad request: invalid input."
+          },
+          "401": {
+            "description": "Unauthorized: request was not successful because it lacks valid authentication credentials for the requested resource."
+          },
+          "403": {
+            "description": "Forbidden: request was not successful because the client does not have access rights to the resource or data requested."
+          },
+          "404": {
+            "description": "Not found: server cannot find the requested resource."
+          },
+          "500": {
+            "description": "Internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request."
           }
         }
       }
