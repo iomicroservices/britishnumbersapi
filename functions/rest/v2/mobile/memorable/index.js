@@ -32,7 +32,7 @@ const VALIDATIONS = {
     },
     price: (value, paramName) => {
         if (!value) return null;
-        return this.isValidPrice(value) ? null : `${paramName}: must be a valid number or decimal, max 15 characters, or omitted.`;
+        return VALIDATIONS.isValidPrice(value) ? null : `${paramName}: must be a valid number or decimal, max 15 characters, or omitted.`;
     },
     priceLte: (params) => VALIDATIONS.price(params.price_lte, 'price_lte'),
     priceGte: (params) => VALIDATIONS.price(params.price_gte, 'price_gte'),
@@ -43,6 +43,16 @@ const VALIDATIONS = {
         if (parts.length !== 2 || !/^\d+$/.test(parts[0]) || !/^\d+$/.test(parts[1])) {
             return 'range: must be "start-end" (two integers). Omit for first 100 results. Max 100 results per request.';
         }
+        return null;
+    },
+    delivery: (params) => {
+        const v = params.delivery;
+        if (v == null || v === '') return null;
+        if (typeof v !== 'string') return 'delivery: must be a string.';
+        if (v.length > 2) return 'delivery: must be at most 2 characters.';
+        if (!/^\d+$/.test(v)) return 'delivery: must contain only digits (0-9).';
+        const validValues = ['1', '7', '14', '20'];
+        if (!validValues.includes(v)) return 'delivery: must be 1, 7, 14, or 20.';
         return null;
     },
 };
@@ -57,6 +67,7 @@ function validateParams(params) {
         () => VALIDATIONS.priceLte(params),
         () => VALIDATIONS.priceGte(params),
         () => VALIDATIONS.range(params),
+        () => VALIDATIONS.delivery(params),
     ];
     for (const check of checks) {
         const msg = check();
@@ -66,7 +77,7 @@ function validateParams(params) {
 }
 
 // Helper function to construct filters
-function constructFilters({ type, search, price_gte, price_lte, match }) {
+function constructFilters({ type, search, price_gte, price_lte, match, delivery }) {
     // Default type to 'number' and search to ilike.** if search is null or empty
     type = type || 'number';  // Default type to 'number' if it's not provided
     search = search || '**';  // Default search to '**' if it's not provided
@@ -82,6 +93,11 @@ function constructFilters({ type, search, price_gte, price_lte, match }) {
         filters.push(`${type}.eq.${search}`);
     } else {
         filters.push(`${type}.ilike.*${search}*`);  // Apply ilike for fuzzy search or if no match is provided
+    }
+
+    // Add delivery filter if provided
+    if (delivery) {
+        filters.push(`delivery.eq.${delivery}`);
     }
 
     return filters;
@@ -102,6 +118,7 @@ export async function onRequestGet(context) {
         price_gte: url.searchParams.get('price_gte') || null,
         price_lte: url.searchParams.get('price_lte') || null,
         range: url.searchParams.get('range') || null,
+        delivery: url.searchParams.get('delivery') || null,
     };
 
     const errors = validateParams(params);
