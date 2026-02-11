@@ -1,7 +1,7 @@
 // Helper function to set headers
-function setBaseHeaders(baseHeaders, range, apiKey) {
-    baseHeaders.set('apikey', apiKey);
-    baseHeaders.set('Authorization', `Bearer ${apiKey}`);
+function setBaseHeaders(baseHeaders, range, databaseApiKey) {
+    baseHeaders.set('apiKey', databaseApiKey);
+    baseHeaders.set('Authorization', `Bearer ${databaseApiKey}`);
     if (range) baseHeaders.set('Range', range);
     baseHeaders.set('Prefer', 'count=exact');
     return baseHeaders;
@@ -110,7 +110,7 @@ function constructFilters({ type, search, price_gte, price_lte, match, delivery 
 export async function onRequestGet(context) {
     const baseURL = context.env.DATABASE_BASE_URL;
     const url = new URL(context.request.url);
-    const apiKey = context.env.DATABASE_API_KEY;
+    const databaseApiKey = context.env.DATABASE_API_KEY;
     const sourceUrl = context.request.headers.get('Referer') || 'unknown';
 
     // Extract query parameters
@@ -140,7 +140,7 @@ export async function onRequestGet(context) {
     const filters = constructFilters(params);
 
     // Check if the base URL or API key is not set
-    if (!baseURL || !apiKey) {
+    if (!baseURL || !databaseApiKey) {
         return new Response(JSON.stringify({ error: 'Service misconfigured' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
     // LEGACY DEPRECATED: Construct the API URL
@@ -155,7 +155,7 @@ export async function onRequestGet(context) {
 
     // Construct the API headers
     const baseHeaders = new Headers();
-    setBaseHeaders(baseHeaders, params.range, apiKey); // Set headers with the range if exists
+    setBaseHeaders(baseHeaders, params.range, databaseApiKey); // Set headers with the range if exists
 
     try {
         const firstResponse = await fetch(destinationURL, {

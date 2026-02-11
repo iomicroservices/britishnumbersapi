@@ -1,3 +1,5 @@
+// DEPRECATED: This file is no longer used.
+
 export function extractAuthHeader(request) {
     const authHeader = request.headers.get('Authorization') || '';
     return authHeader;

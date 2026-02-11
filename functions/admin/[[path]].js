@@ -168,7 +168,7 @@ export async function onRequest(context) {
                     path: '/admin/hash',
                     body: {
                         partner_id: '00000000-0000-0000-0000-000000000000',
-                        apiKey: 'sk_live_...',
+                        partner_api_key: 'sk_live_...',
                     },
                 },
                 generate: {
@@ -187,10 +187,10 @@ export async function onRequest(context) {
     // POST /admin/hash
     // --------------------------------------------------
     // Takes:
-    //   { partner_id, apiKey }
+    //   { partner_id, partner_api_key }
     //
     // Returns:
-    //   { partner_id, keyHash }
+    //   { partner_id, key_hash }
     //
     // This does NOT write to Supabase.
 
@@ -205,26 +205,27 @@ export async function onRequest(context) {
             return json(400, { error: 'INVALID_PARAMS', message: pid.message });
         }
 
-        const apiKey = parsed.body?.apiKey;
-        if (!apiKey || typeof apiKey !== 'string') {
+        const partner_api_key = parsed.body?.partner_api_key;
+        if (!partner_api_key || typeof partner_api_key !== 'string') {
             return json(400, {
                 error: 'INVALID_PARAMS',
-                message: 'apiKey (string) is required.',
+                message: 'partner_api_key (string) is required.',
             });
         }
 
-        if (apiKey.length < 16 || apiKey.length > 200) {
+        if (partner_api_key.length < 16 || appartner_api_keyiKey.length > 200) {
             return json(400, {
                 error: 'INVALID_PARAMS',
-                message: 'apiKey length looks invalid.',
+                message: 'partner_api_key length looks invalid.',
             });
         }
 
-        const keyHash = await sha256Hex(apiKey);
+        const key_hash = await sha256Hex(partner_api_key);
 
         return json(200, {
             partner_id: pid.partner_id,
-            keyHash,
+            partner_api_key,
+            key_hash,
         });
     }
 
@@ -234,11 +235,11 @@ export async function onRequest(context) {
     // Generates a new API key AND hashes it.
     //
     // Returns:
-    //   { partner_id, apiKey, keyHash }
+    //   { partner_id, partner_api_key, key_hash }
     //
     // You:
-    // - give apiKey to the partner (ONCE)
-    // - store keyHash in Supabase
+    // - give partner_api_key to the partner (ONCE)
+    // - store key_hash in Supabase
 
     if (
         (path === '/admin/generate-key' || path === '/admin/generate-key/') &&
@@ -259,13 +260,13 @@ export async function onRequest(context) {
                 ? parsed.body.prefix
                 : 'sk_live_';
 
-        const apiKey = generateApiKey(prefix);
-        const keyHash = await sha256Hex(apiKey);
+        const partner_api_key = generateApiKey(prefix);
+        const key_hash = await sha256Hex(partner_api_key);
 
         return json(200, {
             partner_id: pid.partner_id,
-            apiKey,
-            keyHash,
+            partner_api_key: pid.partner_api_key,
+            key_hash,
         });
     }
 

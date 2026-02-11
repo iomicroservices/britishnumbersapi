@@ -97,9 +97,9 @@ function validatePurchaseParams(params) {
     return errors;
 }
 
-function setSupabaseHeaders(headers, apiKey) {
-    headers.set('apikey', apiKey);
-    headers.set('Authorization', `Bearer ${apiKey}`);
+function setSupabaseHeaders(headers, databaseApiKey) {
+    headers.set('apikey', databaseApiKey);
+    headers.set('Authorization', `Bearer ${databaseApiKey}`);
     // headers.set('Content-Type', 'application/json'); // ACTION: is this required?
     return headers;
 }
@@ -150,10 +150,10 @@ export async function onRequestPost(context) {
     }
 
     const baseURL = env.DATABASE_BASE_URL;
-    const apiKey = env.DATABASE_API_KEY;
+    const databaseApiKey = env.DATABASE_API_KEY;
     const webhookBaseUrl = env.PURCHASE_WEBHOOK_BASE_URL;
 
-    if (!baseURL || !apiKey) {
+    if (!baseURL || !databaseApiKey) {
         return new Response(JSON.stringify({ status: 500, error: 'INTERNAL_SERVER_ERROR', message: 'Service misconfigured' }), { status: 500, headers: jsonHeaders });
     }
     if (!webhookBaseUrl) {
@@ -162,7 +162,7 @@ export async function onRequestPost(context) {
 
     const inFilter = numbersList.map((n) => encodeURIComponent(n)).join(',');
     const lookupUrl = `${baseURL}/rest/v1/mobile_numbers?number=in.(${inFilter})&available=eq.true&select=number,price,t1,t2,delivery`;
-    const headers = setSupabaseHeaders(new Headers(), apiKey);
+    const headers = setSupabaseHeaders(new Headers(), databaseApiKey);
 
     let lookupResponse;
     try {

@@ -182,7 +182,7 @@
               "application/json": {
                 "status": 401,
                 "error": "INVALID_API_KEY",
-                "message": "A valid apiKey must be provided in the request Header."
+                "message": "A valid X-API-KEY must be provided in the request Header."
               }
             }
           },
@@ -306,7 +306,7 @@
               "application/json": {
                 "status": 401,
                 "error": "INVALID_API_KEY",
-                "message": "A valid apiKey must be provided in the request Header."
+                "message": "A valid X-API-KEY must be provided in the request Header."
               }
             }
           },

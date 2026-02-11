@@ -1,14 +1,14 @@
 export async function onRequestGet(context) {
     const baseURL = context.env.TELEPHONE_BASE_URL;
     const url = new URL(context.request.url);
-    const apiKey = context.env.TELEPHONE_API_KEY;
+    const telephoneApiKey = context.env.TELEPHONE_API_KEY;
     const searchParams = url.search;
     const sourceUrl = context.request.headers.get('Referer') || 'unknown';
     
 
     // Common headers pre-configured
     const baseHeaders = new Headers({
-        'Authorization': `${apiKey}`,
+        'Authorization': `${telephoneApiKey}`,
     });
 
 
