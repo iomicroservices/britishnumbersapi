@@ -106,6 +106,8 @@ function constructFilters({ type, search, price_gte, price_lte, match, delivery 
     return filters;
 }
 
+const jsonHeaders = { 'Content-Type': 'application/json' };
+
 // Main function
 export async function onRequestGet(context) {
     const baseURL = context.env.DATABASE_BASE_URL;
@@ -132,7 +134,7 @@ export async function onRequestGet(context) {
                 error: 'INVALID_PARAMS',
                 messages: errors,
             }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
+            { status: 400, headers: jsonHeaders }
         );
     }
 
@@ -141,7 +143,7 @@ export async function onRequestGet(context) {
 
     // Check if the base URL or API key is not set
     if (!baseURL || !databaseApiKey) {
-        return new Response(JSON.stringify({ error: 'Service misconfigured' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ error: 'Service misconfigured' }), { status: 500, headers: jsonHeaders });
     }
     // LEGACY DEPRECATED: Construct the API URL
     // const query = `&and=(${filters.join(',')})`;
@@ -169,7 +171,7 @@ export async function onRequestGet(context) {
             console.error('Supabase request failed:', firstResponse.status, errorData);
             return new Response(JSON.stringify({ error: 'Search request failed. Please try again.' }), {
                 status: 502,
-                headers: { 'Content-Type': 'application/json' },
+                headers: jsonHeaders,
             });
         }
 
@@ -218,7 +220,7 @@ export async function onRequestGet(context) {
         console.error('Memorable search error:', error);
         return new Response(JSON.stringify({ error: 'An unexpected error occurred. Please try again.' }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' },
+            headers: jsonHeaders,
         });
     }
 }

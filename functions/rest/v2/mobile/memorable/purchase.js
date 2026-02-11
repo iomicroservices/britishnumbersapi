@@ -1,3 +1,15 @@
+// Enforce body limit helper function
+function enforceBodyLimit(request) {
+    const len = Number(request.headers.get('Content-Length'));
+    if (Number.isFinite(len) && len > 20_000) { // 20 KB hard-ish limit
+        return new Response(
+            JSON.stringify({ status: 413, error: 'PAYLOAD_TOO_LARGE' }),
+            { status: 413, headers: jsonHeaders }
+        );
+    }
+    return null;
+}
+
 // Parse application/x-www-form-urlencoded: items.number[0], items.provision[0], etc.
 function parseFormItems(params) {
     const byIndex = new Map();
@@ -45,14 +57,20 @@ async function parsePostParams(request, url) {
     return null;
 }
 
+function setSupabaseHeaders(headers, databaseApiKey) {
+    headers.set('apikey', databaseApiKey);
+    headers.set('Authorization', `Bearer ${databaseApiKey}`);
+    return headers;
+}
+
 // Validation rules: each returns an error message or null
 const VALIDATIONS = {
     partnerId(params) {
         const v = params.partnerId;
         if (v == null || v === '') return 'partnerId: is required.';
         if (typeof v !== 'string') return 'partnerId: must be a string.';
-        if (v.length > 20) return 'partnerId: must be at most 20 characters.';
-        if (!/^[a-zA-Z0-9]+$/.test(v)) return 'partnerId: only letters and numbers allowed.';
+        if (v.length > 50) return 'partnerId: must be at most 20 characters.';
+        if (!/^[a-zA-Z0-9-]+$/.test(v)) return 'partnerId: only letters, numbers, and dashes allowed.';
         return null;
     },
     items(params) {
@@ -97,13 +115,6 @@ function validatePurchaseParams(params) {
     return errors;
 }
 
-function setSupabaseHeaders(headers, databaseApiKey) {
-    headers.set('apikey', databaseApiKey);
-    headers.set('Authorization', `Bearer ${databaseApiKey}`);
-    // headers.set('Content-Type', 'application/json'); // ACTION: is this required?
-    return headers;
-}
-
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
 // GET not supported; use POST with JSON body or application/x-www-form-urlencoded.
@@ -119,6 +130,10 @@ export async function onRequestGet() {
 }
 
 export async function onRequestPost(context) {
+    // 🔒 Enforce body size limit early
+    const bodyLimitResponse = enforceBodyLimit(context.request);
+    if (bodyLimitResponse) return bodyLimitResponse;
+
     const url = new URL(context.request.url);
     const env = context.env;
 
@@ -130,6 +145,16 @@ export async function onRequestPost(context) {
     }
     if (!params) {
         return new Response(JSON.stringify({ status: 415, error: 'UNSUPPORTED_MEDIA_TYPE', message: 'Content-Type must be application/json or application/x-www-form-urlencoded.' }), { status: 415, headers: jsonHeaders });
+    }
+    if (Array.isArray(params.items) && params.items.length > 100) {
+        return new Response(
+            JSON.stringify({
+                status: 413,
+                error: 'PAYLOAD_TOO_LARGE',
+                message: 'Too many items: The maximum number of items allowed per request is 100.',
+            }),
+            { status: 413, headers: jsonHeaders }
+        );
     }
 
     const errors = validatePurchaseParams(params);
@@ -160,8 +185,12 @@ export async function onRequestPost(context) {
         return new Response(JSON.stringify({ error: 'Purchase webhook not configured' }), { status: 503, headers: jsonHeaders });
     }
 
-    const inFilter = numbersList.map((n) => encodeURIComponent(n)).join(',');
-    const lookupUrl = `${baseURL}/rest/v1/mobile_numbers?number=in.(${inFilter})&available=eq.true&select=number,price,t1,t2,delivery`;
+    const lookup = new URL(`${baseURL}/rest/v1/mobile_numbers`);
+    lookup.searchParams.set('number', `in.(${numbersList.join(',')})`);
+    lookup.searchParams.set('available', 'eq.true');
+    lookup.searchParams.set('select', 'number,price,t1,t2,delivery');
+    const lookupUrl = lookup.toString();
+
     const headers = setSupabaseHeaders(new Headers(), databaseApiKey);
 
     let lookupResponse;

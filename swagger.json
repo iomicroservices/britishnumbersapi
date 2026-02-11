@@ -385,6 +385,19 @@
               }
             }
           },
+          "413": {
+            "description": "Too many items: The maximum number of items allowed per request is 100.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "status": 413,
+                "error": "PAYLOAD_TOO_LARGE",
+                "message": "The maximum number of items allowed per request is 100."
+              }
+            }
+          },
           "500": {
             "description": "Internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.",
             "schema": {
@@ -502,7 +515,7 @@
       "properties": {
         "partnerId": {
           "type": "string",
-          "description": "Must be a valid alphanumeric string up to 20 characters."
+          "description": "Must be a valid alphanumeric string, only hyphens are allowed special characters. Maximum of 50 characters."
         },
         "email": {
           "type": "string",
