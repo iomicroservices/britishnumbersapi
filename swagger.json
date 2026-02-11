@@ -161,19 +161,69 @@
             }
           },
           "400": {
-            "description": "Bad request: invalid input."
+            "description": "Bad request: invalid input.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "status": 400,
+                "error": "INVALID_PARAMS",
+                "message": "delivery: must be an integer with up to 2 digits (no decimals)."
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized: request was not successful because it lacks valid authentication credentials for the requested resource."
+            "description": "Unauthorized: request was not successful because it lacks valid authentication credentials for the requested resource.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "status": 401,
+                "error": "INVALID_API_KEY",
+                "message": "A valid apiKey must be provided in the request Header."
+              }
+            }
           },
           "403": {
-            "description": "Forbidden: request was not successful because the client does not have access rights to the resource or data requested."
+            "description": "Forbidden: request was not successful because the client does not have access rights to the resource or data requested.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "status": 403,
+                "error": "INVALID_PARTNER",
+                "message": "The API key is not authorised for the specified partner."
+              }
+            }
           },
           "404": {
-            "description": "Not found: server cannot find the requested resource."
+            "description": "Not found: server cannot find the requested resource.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "status": 404,
+                "error": "NOT_FOUND",
+                "message": "The requested resource was not found. Check the URL or use the API documentation to find a valid endpoint."
+              }
+            }
           },
           "500": {
-            "description": "Internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request."
+            "description": "Internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "status": 500,
+                "error": "INTERNAL_SERVER_ERROR",
+                "message": "Service misconfigured"
+              }
+            }
           }
         }
       }
