@@ -78,9 +78,7 @@
             "type": "number",
             "enum": [
               1,
-              7,
-              14,
-              20
+              7
             ]
           },
           {
@@ -189,6 +187,7 @@
         "description": "Submit a purchase request to buy one or more selected memorable mobile numbers directly through the API.",
         "operationId": "purchaseMemorableNumbers",
         "consumes": [
+          "application/json",
           "application/x-www-form-urlencoded"
         ],
         "produces": [
@@ -196,25 +195,13 @@
         ],
         "parameters": [
           {
-            "name": "partnerId",
-            "in": "formData",
-            "description": "Must be a valid alphanumeric string up to 20 characters.",
+            "name": "body",
+            "in": "body",
+            "description": "Purchase request payload. For application/json use this shape directly. For application/x-www-form-urlencoded, send partnerId (required), email (optional) plus indexed keys such as items.number[0]=07000111000&items.provision[0]=PAC (provision optional; defaults to PAC).",
             "required": true,
-            "type": "string"
-          },
-          {
-            "name": "number",
-            "in": "formData",
-            "description": "The memorable number(s) you wish to purchase. Multiple numbers supported by repeating the query parameter.",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "email",
-            "in": "formData",
-            "description": "Can be provided to receive service updates otherwise we use the serviceEmail on file. Must be a valid email address. Maximum length is 100 characters.",
-            "required": false,
-            "type": "string"
+            "schema": {
+              "$ref": "#/definitions/PurchaseRequest"
+            }
           }
         ],
         "responses": {
@@ -234,6 +221,7 @@
                 "items": [
                   {
                     "number": "07000111000",
+                    "provision": "PAC",
                     "price": 100,
                     "t1": 80,
                     "t2": 50,
@@ -253,8 +241,8 @@
                 "status": 400,
                 "error": "INVALID_PARAMS",
                 "message": [
-                  "At least one of partnerId or email is required.",
-                  "number: at least one number query param is required."
+                  "partnerId: is required.",
+                  "items: at least one item (with number) is required."
                 ]
               }
             }
@@ -301,6 +289,7 @@
                 "items": [
                   {
                     "number": "07000111000",
+                    "provision": "PAC",
                     "price": null,
                     "t1": null,
                     "t2": null,
@@ -328,6 +317,7 @@
                 "items": [
                   {
                     "number": "07000111000",
+                    "provision": "PAC",
                     "price": 100,
                     "t1": 80,
                     "t2": 50,
@@ -335,6 +325,7 @@
                   },
                   {
                     "number": "07999999999",
+                    "provision": "SIM",
                     "price": null,
                     "t1": null,
                     "t2": null,
@@ -435,6 +426,51 @@
     }
   },
   "definitions": {
+    "PurchaseRequestItem": {
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "string",
+          "description": "The mobile number to purchase."
+        },
+        "provision": {
+          "type": "string",
+          "description": "Provisioning method for the mobile number. Optional; defaults to PAC when omitted.",
+          "enum": [
+            "PAC",
+            "SIM"
+          ],
+          "default": "PAC"
+        }
+      },
+      "required": [
+        "number"
+      ]
+    },
+    "PurchaseRequest": {
+      "type": "object",
+      "properties": {
+        "partnerId": {
+          "type": "string",
+          "description": "Must be a valid alphanumeric string up to 20 characters."
+        },
+        "email": {
+          "type": "string",
+          "description": "Optional contact email for service updates, otherwise we use the serviceEmail on file. Must be valid; maximum length is 100 characters."
+        },
+        "items": {
+          "type": "array",
+          "description": "Mobile numbers to purchase.",
+          "items": {
+            "$ref": "#/definitions/PurchaseRequestItem"
+          }
+        }
+      },
+      "required": [
+        "partnerId",
+        "items"
+      ]
+    },
     "MobileNumber": {
       "type": "object",
       "properties": {
@@ -460,11 +496,12 @@
         },
         "delivery": {
           "type": "number",
-          "description": "Delivery status of the number.",
+          "description": "The number of working days required to deliver the number PAC; add two (2) working days for SIM.",
           "enum": [
             1,
             7,
-            14,
+            10,
+            15,
             20
           ]
         },
@@ -508,6 +545,34 @@
           "type": "string",
           "description": "The mobile phone number."
         },
+        "delivery": {
+          "type": "string",
+          "description": "The number of working days required to deliver the number PAC; add two (2) working days for SIM.",
+          "enum": [
+            1,
+            7,
+            10,
+            15,
+            20
+          ]
+        },
+        "provision": {
+          "type": "string",
+          "description": "The provisioning method for the number.",
+          "enum": [
+            "PAC",
+            "SIM"
+          ],
+          "default": "PAC"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of number: 'memorable' or 'custom'.",
+          "enum": [
+            "memorable",
+            "custom"
+          ]
+        },
         "price": {
           "type": "number",
           "description": "Price of the mobile phone number.",
@@ -525,6 +590,7 @@
         },
         "status": {
           "type": "string",
+          "description": "Status of the number purchase request: 'available' (found in database), 'unavailable' (not found), or 'processing' (purchase submitted).",
           "enum": [
             "available",
             "unavailable",
@@ -533,12 +599,16 @@
             "paid",
             "delivered",
             "cancelled"
-          ],
-          "description": "Status of the number: 'available' (found in database), 'unavailable' (not found), or 'processing' (purchase submitted)."
+          ]
         }
       },
       "required": [
         "number",
+        "delivery",
+        "provision",
+        "price",
+        "t1",
+        "t2",
         "status"
       ]
     },

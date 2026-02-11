@@ -51,8 +51,8 @@ const VALIDATIONS = {
         if (typeof v !== 'string') return 'delivery: must be a string.';
         if (v.length > 2) return 'delivery: must be at most 2 characters.';
         if (!/^\d+$/.test(v)) return 'delivery: must contain only digits (0-9).';
-        const validValues = ['1', '7', '14', '20'];
-        if (!validValues.includes(v)) return 'delivery: must be 1, 7, 14, or 20.';
+        const validValues = ['1', '7'];
+        if (!validValues.includes(v)) return 'delivery: must be 1 or 7';
         return null;
     },
 };

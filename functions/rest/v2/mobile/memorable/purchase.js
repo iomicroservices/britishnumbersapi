@@ -1,4 +1,51 @@
-// Validation rules: each returns an error message or null (query params)
+// Parse application/x-www-form-urlencoded: items.number[0], items.provision[0], etc.
+function parseFormItems(params) {
+    const byIndex = new Map();
+    const numberRe = /^items\.number\[(\d+)\]$/;
+    const provisionRe = /^items\.provision\[(\d+)\]$/;
+    for (const [key, value] of params.entries()) {
+        const numberMatch = key.match(numberRe);
+        if (numberMatch) {
+            const i = parseInt(numberMatch[1], 10);
+            if (!byIndex.has(i)) byIndex.set(i, { number: null, provision: null });
+            byIndex.get(i).number = value;
+            continue;
+        }
+        const provisionMatch = key.match(provisionRe);
+        if (provisionMatch) {
+            const i = parseInt(provisionMatch[1], 10);
+            if (!byIndex.has(i)) byIndex.set(i, { number: null, provision: null });
+            byIndex.get(i).provision = value;
+        }
+    }
+    const indices = [...byIndex.keys()].sort((a, b) => a - b);
+    return indices.map((i) => byIndex.get(i));
+}
+
+async function parsePostParams(request, url) {
+    const contentType = (request.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
+    if (contentType === 'application/json') {
+        const body = await request.json();
+        return {
+            partnerId: body.partnerId ?? null,
+            email: body.email ?? null,
+            items: Array.isArray(body.items) ? body.items : [],
+        };
+    }
+    if (contentType === 'application/x-www-form-urlencoded') {
+        const bodyText = await request.text();
+        const params = bodyText ? new URLSearchParams(bodyText) : url.searchParams; // ACTION: ThIS makes it possible to send POSTs with parameters in the query string if body is empty
+        const items = parseFormItems(params);
+        return {
+            partnerId: params.get('partnerId') ?? null,
+            email: params.get('email') ?? null,
+            items,
+        };
+    }
+    return null;
+}
+
+// Validation rules: each returns an error message or null
 const VALIDATIONS = {
     partnerId(params) {
         const v = params.partnerId;
@@ -8,14 +55,22 @@ const VALIDATIONS = {
         if (!/^[a-zA-Z0-9]+$/.test(v)) return 'partnerId: only letters and numbers allowed.';
         return null;
     },
-    numbers(params) {
-        const list = params.numbers;
-        if (list == null || list.length === 0) return 'number: at least one number query param is required.';
+    items(params) {
+        const list = params.items;
+        if (list == null || list.length === 0) return 'items: at least one item (with number) is required.';
         for (let i = 0; i < list.length; i++) {
             const n = list[i];
-            if (typeof n !== 'string') return `number: each value must be a string.`;
-            if (n.length > 11) return `number: must be at most 11 characters.`;
-            if (!/^\d+$/.test(n)) return `number: must contain only integers (0-9).`;
+            if (!n || typeof n !== 'object') return `items[${i}]: must be an object with number and optional provision.`;
+            const number = n.number;
+            const provision = n.provision;
+            if (number == null || number === '') return `items[${i}].number: is required.`;
+            if (typeof number !== 'string') return `items[${i}].number: must be a string.`;
+            if (number.length > 11) return `items[${i}].number: must be at most 11 characters.`;
+            if (!/^\d+$/.test(number)) return `items[${i}].number: must contain only digits (0-9).`;
+            if (provision == null || provision === '') continue;
+            if (typeof provision !== 'string') return `items[${i}].provision: must be a string when provided.`;
+            if (provision.length > 3) return `items[${i}].provision: must be at most 3 characters.`;
+            if (provision !== 'PAC' && provision !== 'SIM') return `items[${i}].provision: must be PAC or SIM when provided.`;
         }
         return null;
     },
@@ -24,7 +79,7 @@ const VALIDATIONS = {
         if (v == null || v === '') return null;
         if (typeof v !== 'string') return 'email: must be a string.';
         if (v.length > 100) return 'email: maximum length is 100 characters.';
-        if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]{2,}$/.test(v)) return 'email: must be a valid email; only letters, numbers, and ".", "_", "-", "@" special characters allowed.';
+        if (!/^[a-zA-Z0-9._+-]+@[a-zA-Z0-9._+-]+\.[a-zA-Z]{2,}$/.test(v)) return 'email: must be a valid email; only letters, numbers, and ".", "_", "-", "+", "@" special characters allowed.';
         return null;
     },
 };
@@ -32,7 +87,7 @@ const VALIDATIONS = {
 function validatePurchaseParams(params) {
     const checks = [
         () => VALIDATIONS.partnerId(params),
-        () => VALIDATIONS.numbers(params),
+        () => VALIDATIONS.items(params),
         () => VALIDATIONS.email(params),
     ];
     const errors = checks.flatMap((c) => {
@@ -45,19 +100,19 @@ function validatePurchaseParams(params) {
 function setSupabaseHeaders(headers, apiKey) {
     headers.set('apikey', apiKey);
     headers.set('Authorization', `Bearer ${apiKey}`);
-    headers.set('Content-Type', 'application/json');
+    // headers.set('Content-Type', 'application/json'); // ACTION: is this required?
     return headers;
 }
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
-// Repurpose GET requests to return purchase status and any additional information such as invoice using query params: partnerId and number.
+// GET not supported; use POST with JSON body or application/x-www-form-urlencoded.
 export async function onRequestGet() {
     return new Response(
         JSON.stringify({
             status: 405,
             error: 'Method not allowed',
-            message: 'Use POST with query params: partnerId (required) and number (repeat for multiple). Example: POST /rest/v2/mobile/memorable/purchase?partnerId=rec1234567890&number=07875604202',
+            message: 'Use POST with Content-Type: application/json (body: partnerId, email?, items: [{ number, provision }]) or application/x-www-form-urlencoded (e.g. partnerId=…&items.number[0]=…&items.provision[0]=…).',
         }),
         { status: 405, headers: jsonHeaders }
     );
@@ -67,15 +122,31 @@ export async function onRequestPost(context) {
     const url = new URL(context.request.url);
     const env = context.env;
 
-    const partnerId = url.searchParams.get('partnerId') ?? null;
-    const email = url.searchParams.get('email') ?? null;
-    const numbers = url.searchParams.getAll('number');
-
-    const params = { partnerId, email, numbers };
+    let params;
+    try {
+        params = await parsePostParams(context.request, url);
+    } catch (e) {
+        return new Response(JSON.stringify({ status: 400, error: 'INVALID_BODY', message: 'Invalid request body (expected JSON or form-urlencoded).' }), { status: 400, headers: jsonHeaders });
+    }
+    if (!params) {
+        return new Response(JSON.stringify({ status: 415, error: 'UNSUPPORTED_MEDIA_TYPE', message: 'Content-Type must be application/json or application/x-www-form-urlencoded.' }), { status: 415, headers: jsonHeaders });
+    }
 
     const errors = validatePurchaseParams(params);
     if (errors.length > 0) {
         return new Response(JSON.stringify({ status: 400, error: 'INVALID_PARAMS', message: errors }), { status: 400, headers: jsonHeaders });
+    }
+
+    const { partnerId, email, items: requestItems } = params;
+    // Unique list of numbers for lookup; preserve order and provision per number (first occurrence).
+    const numbersList = [];
+    const numberToProvision = new Map();
+    for (const { number, provision } of requestItems) {
+        const normalizedProvision = provision == null || provision === '' ? 'PAC' : provision;
+        if (!numberToProvision.has(number)) {
+            numberToProvision.set(number, normalizedProvision);
+            numbersList.push(number);
+        }
     }
 
     const baseURL = env.DATABASE_BASE_URL;
@@ -89,10 +160,8 @@ export async function onRequestPost(context) {
         return new Response(JSON.stringify({ error: 'Purchase webhook not configured' }), { status: 503, headers: jsonHeaders });
     }
 
-    const numbersList = [...new Set(numbers)];
-
     const inFilter = numbersList.map((n) => encodeURIComponent(n)).join(',');
-    const lookupUrl = `${baseURL}/rest/v1/mobile_numbers?number=in.(${inFilter})&available=eq.true&select=number,price,t1,t2`;
+    const lookupUrl = `${baseURL}/rest/v1/mobile_numbers?number=in.(${inFilter})&available=eq.true&select=number,price,t1,t2,delivery`;
     const headers = setSupabaseHeaders(new Headers(), apiKey);
 
     let lookupResponse;
@@ -114,12 +183,13 @@ export async function onRequestPost(context) {
 
     const missing = numbersList.filter((n) => !foundNumbers.has(n));
     if (missing.length > 0) {
-        const items = numbersList.map((number) => {
+        const responseItems = numbersList.map((number) => {
             const row = foundByNumber.get(number);
+            const provision = numberToProvision.get(number);
             if (row) {
-                return { number, price: row.price, t1: row.t1, t2: row.t2, status: 'available' };
+                return { number, provision, delivery: row.delivery, type: "memorable", price: row.price, t1: row.t1, t2: row.t2, status: 'available' };
             }
-            return { number, price: null, t1: null, t2: null, status: 'unavailable' };
+            return { number, provision, delivery: null, type: "memorable", price: null, t1: null, t2: null, status: 'unavailable' };
         });
         const statusCode = missing.length === numbersList.length ? 404 : 409;
         const message = missing.length === numbersList.length
@@ -131,17 +201,23 @@ export async function onRequestPost(context) {
                 message,
                 available: [...foundNumbers],
                 unavailable: missing,
-                items,
+                items: responseItems,
             }),
             { status: statusCode, headers: jsonHeaders }
         );
     }
 
-    const items = numbersList.map((number) => {
+    const pricedItems = numbersList.map((number) => {
         const row = foundByNumber.get(number);
-        return { number, rrp: row?.price, t1: row?.t1, t2: row?.t2 };
+        const provision = numberToProvision.get(number);
+        return { number, provision, delivery: row?.delivery, type: "memorable", rrp: row?.price, t1: row?.t1, t2: row?.t2 };
     });
-    const webhookPayload = { partnerId, email, numbers: numbersList, items };
+    const webhookPayload = {
+        partnerId,
+        email,
+        numbers: pricedItems.map(({ number }) => number),
+        items: pricedItems.map(({ number, provision, delivery, type, rrp, t1, t2 }) => ({ number, provision, delivery, type, rrp, t1, t2 })),
+    };
     let webhookResponse;
     try {
         webhookResponse = await fetch(webhookBaseUrl, {
@@ -154,16 +230,19 @@ export async function onRequestPost(context) {
         return new Response(JSON.stringify({ status: 502, error: 'BAD_GATEWAY', message: 'Purchase request could not be completed. Please try again.' }), { status: 502, headers: jsonHeaders });
     }
 
-    let message;
-    const contentType = webhookResponse.headers.get('Content-Type') || '';
+    let message = null;
+
     try {
-        if (contentType.includes('application/json')) {
-            message = await webhookResponse.json();
+        const text = await webhookResponse.text();
+        const ct = webhookResponse.headers.get('Content-Type') || '';
+
+        if (ct.includes('application/json')) {
+            // Prefer JSON if declared as JSON
+            message = text ? JSON.parse(text) : null;
         } else {
-            const text = await webhookResponse.text();
+            // If not declared JSON, try anyway (covers misconfigured webhooks)
             try {
-                const parsed = JSON.parse(text);
-                message = typeof parsed === 'string' ? parsed : text;
+                message = text ? JSON.parse(text) : '';
             } catch {
                 message = text;
             }
@@ -172,13 +251,13 @@ export async function onRequestPost(context) {
         message = null;
     }
 
-    const responseItems = items.map(({ number, rrp, t1, t2 }) => ({ number, price: rrp, t1, t2, status: 'processing' }));
+    const responseItems = pricedItems.map(({ number, provision, delivery, rrp, t1, t2 }) => ({ number, provision, delivery, type: "memorable", price: rrp, t1, t2, status: 'processing' }));
 
     const body = {
         status: webhookResponse.status,
         message,
     };
-    if (webhookResponse.status === 200) {
+    if (webhookResponse.ok) {
         body.available = [...foundNumbers];
         body.unavailable = [];
         body.items = responseItems;
