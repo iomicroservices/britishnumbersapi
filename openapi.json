@@ -1,0 +1,856 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "description": "The SUCK A NUT API gives you access to the largest database of UK mobile numbers available for sale. It's designed to make finding and buying numbers easy and straightforward for our partners.",
+    "version": "2.0.1",
+    "title": "British Numbers API",
+    "termsOfService": "https://api.britishnumbers.com/terms-of-service",
+    "contact": {
+      "email": "info@britishnumbers.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "paths": {
+    "/mobile/memorable": {
+      "get": {
+        "tags": [
+          "Mobile Numbers"
+        ],
+        "summary": "Search our database of memorable mobile numbers",
+        "description": "Explore a vast selection of memorable mobile numbers with our search feature. Tailor search queries using specific criteria to find the perfect, easy-to-remember mobile numbers for your needs.",
+        "operationId": "findMemorableNumbers",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Flexible memorable-number search.\n\nRules:\n- Accepts digits, letters, or mixed input.\n- Letters are converted to phone keypad digits before filtering (ABC->2, DEF->3, GHI->4, JKL->5, MNO->6, PQRS->7, TUV->8, WXYZ->9).\n- Multi-part mode uses commas and is only valid when `type=number` and `match=fuzzy` (or both omitted).\n- Up to 3 parts (max 2 commas); each part max 11 characters after conversion.\n\nPart behavior:\n- 1 part: contains (fuzzy) or exact equality (exact mode).\n- 2 parts: `start,contains`.\n- 3 parts: `start,contains,end` with optional blank start/contains (e.g. `077,,999` or `,47,2229`).\n\nInvalid:\n- More than 2 commas.\n- Empty search (e.g. `,,`).\n- Unsupported symbols (anything except letters, digits, commas).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9,]+$"
+            },
+            "examples": {
+              "singleContains": {
+                "summary": "Single-part contains",
+                "value": "345678"
+              },
+              "singleLetters": {
+                "summary": "Letters converted to keypad",
+                "value": "hello"
+              },
+              "singleMixed": {
+                "summary": "Mixed letters and digits",
+                "value": "777a7"
+              },
+              "twoPart": {
+                "summary": "Starts with + contains",
+                "value": "079,5050"
+              },
+              "threePart": {
+                "summary": "Starts with + contains + ends with",
+                "value": "079,5050,79"
+              },
+              "startAndEndOnly": {
+                "summary": "Starts with + ends with (contains omitted)",
+                "value": "077,,999"
+              },
+              "containsAndEndOnly": {
+                "summary": "Contains + ends with (start omitted)",
+                "value": ",47,2229"
+              },
+              "startsOnly": {
+                "summary": "Starts with only",
+                "value": "07444,"
+              },
+              "containsOnly": {
+                "summary": "Contains only",
+                "value": ",4444"
+              },
+              "endsOnly": {
+                "summary": "End with only",
+                "value": ",,9999"
+              }
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Determines the target field for your search. Available values: number, prefix, last_six. Defaults to number when omitted. Comma-separated multi-part search is supported only when type=number (or omitted).",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "number",
+              "prefix",
+              "last_six"
+            ],
+            "examples": {
+              "number": {
+                "summary": "Search full number field",
+                "value": "number"
+              },
+              "prefix": {
+                "summary": "Search first 6 digits",
+                "value": "prefix"
+              },
+              "last_six": {
+                "summary": "Search last 6 digits",
+                "value": "last_six"
+              }
+            }
+          },
+          {
+            "name": "match",
+            "in": "query",
+            "description": "Match mode. Available values: exact or fuzzy. exact performs precise equality for single-part search. fuzzy performs contains matching. Defaults to fuzzy when omitted. Comma-separated multi-part search is supported only in fuzzy mode (or omitted).",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "exact",
+              "fuzzy"
+            ],
+            "examples": {
+              "exact": {
+                "summary": "Exact match",
+                "value": "exact"
+              },
+              "fuzzy": {
+                "summary": "Fuzzy match",
+                "value": "fuzzy"
+              }
+            }
+          },
+          {
+            "name": "delivery",
+            "in": "query",
+            "description": "Filter by delivery time for mobile number. Available values: 1 or 7.",
+            "required": false,
+            "type": "number",
+            "enum": [
+              1,
+              7
+            ],
+            "examples": {
+              "oneDay": {
+                "summary": "1 day delivery",
+                "value": 1
+              },
+              "sevenDay": {
+                "summary": "7 day delivery",
+                "value": 7
+              }
+            }
+          },
+          {
+            "name": "price_gte",
+            "in": "query",
+            "description": "Filter by price (greater than or equal to). Max 15 characters. Must be a valid number or decimal.",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "price_lte",
+            "in": "query",
+            "description": "Filter by price (less than or equal to). Max 15 characters. Must be a valid number or decimal.",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "description": "Defines the subset of results for pagination, specifying the range with a 'start-end' format of two integers. Omit for first 100 results. Max 100 results per query.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All matching data has been returned (full result set).",
+            "headers": {
+              "Content-Range": {
+                "description": "Range of items returned and total count for pagination, in format start-end/total (e.g. 0-9/100 for first 10 of 100 matches). Use the range query parameter to request a different slice of results.",
+                "type": "string"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileNumber"
+                },
+                "example": [
+                  {
+                    "number": "07000111000",
+                    "price": 240,
+                    "last_six": "111000",
+                    "available": true,
+                    "prefix": "07000",
+                    "delivery": 1,
+                    "price_friendly": "\u00a3240",
+                    "price_filter": "\u00a350 to \u00a3500",
+                    "t1": 180,
+                    "t2": 120
+                  }
+                ]
+              }
+            }
+          },
+          "206": {
+            "description": "Partial content. More matching data exists; only part of the result set has been returned. Use the range query parameter to request further slices.",
+            "headers": {
+              "Content-Range": {
+                "description": "Range of items returned and total count for pagination, in format start-end/total (e.g. 0-9/100 for first 10 of 100 matches). Use the range query parameter to request a different slice of results.",
+                "type": "string"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileNumber"
+                },
+                "example": [
+                  {
+                    "number": "07000999000",
+                    "price": 240,
+                    "last_six": "999000",
+                    "available": true,
+                    "prefix": "07000",
+                    "delivery": 7,
+                    "price_friendly": "\u00a3240",
+                    "price_filter": "\u00a350 to \u00a3500",
+                    "t1": 180,
+                    "t2": 120
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: invalid input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 400,
+                  "error": "INVALID_PARAMS",
+                  "message": "delivery: must be an integer with up to 2 digits (no decimals)."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized: request was not successful because it lacks valid authentication credentials for the requested resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 401,
+                  "error": "INVALID_API_KEY",
+                  "message": "A valid X-API-KEY must be provided in the request Header."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: request was not successful because the client does not have access rights to the resource or data requested.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "FORBIDDEN",
+                  "message": "The API key is not authorised for the specified partner. Please contact support."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found: server cannot find the requested resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 404,
+                  "error": "NOT_FOUND",
+                  "message": "The requested resource was not found. Check the URL or use the API documentation to find a valid endpoint."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 500,
+                  "error": "INTERNAL_SERVER_ERROR",
+                  "message": "Service misconfigured"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mobile/memorable/purchase": {
+      "post": {
+        "tags": [
+          "Mobile Numbers"
+        ],
+        "summary": "Buy memorable mobile numbers",
+        "description": "Submit a purchase request to buy one or more selected memorable mobile numbers directly through the API.",
+        "operationId": "purchaseMemorableNumbers",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseRequest"
+              }
+            }
+          },
+          "description": "Purchase request payload. For application/json use this shape directly. For application/x-www-form-urlencoded, send partnerId (required), email (optional) plus indexed keys such as items.number[0]=07000111000&items.provision[0]=PAC (provision optional; defaults to PAC)."
+        },
+        "responses": {
+          "200": {
+            "description": "Purchase request submitted successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseResponse"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "Purchase request submitted successfully",
+                  "available": [
+                    "07000111000"
+                  ],
+                  "unavailable": [],
+                  "items": [
+                    {
+                      "number": "07000111000",
+                      "provision": "PAC",
+                      "price": 100,
+                      "t1": 80,
+                      "t2": 50,
+                      "status": "processing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 400,
+                  "error": "INVALID_PARAMS",
+                  "message": [
+                    "partnerId: is required.",
+                    "items: at least one item (with number) is required."
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized: request was not successful because it lacks valid authentication credentials for the requested resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 401,
+                  "error": "INVALID_API_KEY",
+                  "message": "A valid X-API-KEY must be provided in the request Header."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: request was not successful because the client does not have access rights to the resource or data requested.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "INVALID_PARTNER",
+                  "message": "The API key is not authorised for the specified partner."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found: All requested numbers are not available for purchase.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseResponse"
+                },
+                "example": {
+                  "status": 404,
+                  "message": "All requested numbers are not available for purchase.",
+                  "available": [],
+                  "unavailable": [
+                    "07000111000"
+                  ],
+                  "items": [
+                    {
+                      "number": "07000111000",
+                      "provision": "PAC",
+                      "price": null,
+                      "t1": null,
+                      "t2": null,
+                      "status": "unavailable"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: One or more numbers are not available for purchase. Resubmit the request with the available numbers only.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseResponse"
+                },
+                "example": {
+                  "status": 409,
+                  "message": "One or more numbers are not available for purchase. Resubmit the request with the available numbers only.",
+                  "available": [
+                    "07000111000"
+                  ],
+                  "unavailable": [
+                    "07999999999"
+                  ],
+                  "items": [
+                    {
+                      "number": "07000111000",
+                      "provision": "PAC",
+                      "price": 100,
+                      "t1": 80,
+                      "t2": 50,
+                      "status": "available"
+                    },
+                    {
+                      "number": "07999999999",
+                      "provision": "SIM",
+                      "price": null,
+                      "t1": null,
+                      "t2": null,
+                      "status": "unavailable"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Too many items: The maximum number of items allowed per request is 100.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 413,
+                  "error": "PAYLOAD_TOO_LARGE",
+                  "message": "The maximum number of items allowed per request is 100."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 500,
+                  "error": "INTERNAL_SERVER_ERROR",
+                  "message": "Service misconfigured"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad gateway: error communicating with upstream service.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 502,
+                  "error": "BAD_GATEWAY",
+                  "message": "Unable to verify numbers. Please try again."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mobile/custom": {
+      "post": {
+        "tags": [
+          "Mobile Numbers"
+        ],
+        "summary": "Create a custom UK mobile number",
+        "description": "Request custom or specific UK mobile numbers, offering solutions for both unique requirements and situations where preferred mobile numbers are unavailable in the /memorable endpoint. This is an asynchronous API - you will receive the available numbers within 3-5 business days via email.",
+        "operationId": "customOperation",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "description": "Specify 6 digits to appear at the end of the desired mobile number.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "description": "Enter your email",
+            "required": true,
+            "type": "string",
+            "format": "email"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Enter your name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "contact",
+            "in": "query",
+            "description": "Enter your phone number",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Custom operation successful."
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKeyAuth": {
+        "type": "apiKey",
+        "name": "X-API-Key",
+        "in": "header"
+      }
+    },
+    "schemas": {
+      "PurchaseRequestItem": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string",
+            "description": "The mobile number to purchase."
+          },
+          "provision": {
+            "type": "string",
+            "description": "Provisioning method for the mobile number. Optional; defaults to PAC when omitted.",
+            "enum": [
+              "PAC",
+              "SIM"
+            ],
+            "default": "PAC"
+          }
+        },
+        "required": [
+          "number"
+        ]
+      },
+      "PurchaseRequest": {
+        "type": "object",
+        "properties": {
+          "partnerId": {
+            "type": "string",
+            "description": "Must be a valid alphanumeric string, only hyphens are allowed special characters. Maximum of 50 characters."
+          },
+          "email": {
+            "type": "string",
+            "description": "Optional contact email for service updates, otherwise we use the serviceEmail on file. Must be valid; maximum length is 100 characters."
+          },
+          "items": {
+            "type": "array",
+            "description": "Mobile numbers to purchase.",
+            "items": {
+              "$ref": "#/components/schemas/PurchaseRequestItem"
+            }
+          }
+        },
+        "required": [
+          "partnerId",
+          "items"
+        ]
+      },
+      "MobileNumber": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string",
+            "description": "The mobile phone number."
+          },
+          "price": {
+            "type": "number",
+            "description": "Price of the mobile phone number."
+          },
+          "last_six": {
+            "type": "string",
+            "description": "Last six digits of the mobile phone number."
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Availability status of the number."
+          },
+          "prefix": {
+            "type": "string",
+            "description": "Prefix of the mobile phone number."
+          },
+          "delivery": {
+            "type": "number",
+            "description": "The number of working days required to deliver the number PAC; add two (2) working days for SIM.",
+            "enum": [
+              1,
+              7,
+              10,
+              15,
+              20
+            ]
+          },
+          "price_friendly": {
+            "type": "string",
+            "description": "Price of the mobile phone number in a friendly format."
+          },
+          "price_filter": {
+            "type": "string",
+            "description": "The price range of the mobile phone number.",
+            "enum": [
+              "\u00a350 to \u00a3500",
+              "\u00a3501 to \u00a31,000",
+              "\u00a31,000+"
+            ]
+          },
+          "t1": {
+            "type": "number",
+            "description": "T1 value."
+          },
+          "t2": {
+            "type": "number",
+            "description": "T2 value."
+          }
+        },
+        "required": [
+          "number",
+          "price",
+          "last_six",
+          "available",
+          "prefix",
+          "delivery",
+          "price_friendly",
+          "price_filter"
+        ]
+      },
+      "PurchaseItem": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string",
+            "description": "The mobile phone number."
+          },
+          "delivery": {
+            "type": "string",
+            "description": "The number of working days required to deliver the number PAC; add two (2) working days for SIM.",
+            "enum": [
+              1,
+              7,
+              10,
+              15,
+              20
+            ]
+          },
+          "provision": {
+            "type": "string",
+            "description": "The provisioning method for the number.",
+            "enum": [
+              "PAC",
+              "SIM"
+            ],
+            "default": "PAC"
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of number: 'memorable' or 'custom'.",
+            "enum": [
+              "memorable",
+              "custom"
+            ]
+          },
+          "price": {
+            "type": "number",
+            "description": "Price of the mobile phone number.",
+            "x-nullable": true
+          },
+          "t1": {
+            "type": "number",
+            "description": "T1 value for the number.",
+            "x-nullable": true
+          },
+          "t2": {
+            "type": "number",
+            "description": "T2 value for the number.",
+            "x-nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the number purchase request: 'available' (found in database), 'unavailable' (not found), or 'processing' (purchase submitted).",
+            "enum": [
+              "available",
+              "unavailable",
+              "processing",
+              "invoiced",
+              "paid",
+              "delivered",
+              "cancelled"
+            ]
+          }
+        },
+        "required": [
+          "number",
+          "delivery",
+          "provision",
+          "price",
+          "t1",
+          "t2",
+          "status"
+        ]
+      },
+      "PurchaseResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "enum": [
+              200,
+              404,
+              409
+            ],
+            "description": "HTTP status code from the API response. 200 if successful, 404 if all numbers unavailable, 409 if some numbersunavailable."
+          },
+          "error": {
+            "type": "string",
+            "description": "Error type (optional)."
+          },
+          "message": {
+            "description": "Response body explaining the success or error status."
+          },
+          "available": {
+            "type": "array",
+            "description": "List of numbers that are available if status is 200 or 409.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "unavailable": {
+            "type": "array",
+            "description": "List of numbers that are not available if status is 404 or 409.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "items": {
+            "type": "array",
+            "description": "Details for all requested numbers with their availability status.",
+            "items": {
+              "$ref": "#/components/schemas/PurchaseItem"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "unavailable",
+          "available",
+          "items"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "description": "HTTP status code."
+          },
+          "error": {
+            "type": "string",
+            "description": "Error type or summary (optional)."
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message."
+          }
+        },
+        "required": [
+          "status",
+          "error",
+          "message"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.britishnumbers.com/rest/v2"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Mobile Numbers",
+      "description": "Search and purchase mobile numbers available in the UK."
+    }
+  ],
+  "security": [
+    {
+      "apiKeyAuth": []
+    }
+  ]
+}
