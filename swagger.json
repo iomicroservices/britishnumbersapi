@@ -484,10 +484,17 @@
     }
   },
   "securityDefinitions": {
-    "basicAuth": {
-      "type": "basic"
+    "apiKeyAuth": {
+      "type": "apiKey",
+      "name": "X-API-Key",
+      "in": "header"
     }
   },
+  "security": [
+    {
+      "apiKeyAuth": []
+    }
+  ],
   "definitions": {
     "PurchaseRequestItem": {
       "type": "object",
