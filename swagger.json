@@ -43,14 +43,14 @@
           {
             "name": "search",
             "in": "query",
-            "description": "Your search query, consisting of numbers/integers, . Max 11 characters for type 'number', 6 characters for type 'prefix' or 'last_six'.",
+            "description": "Search digits. Single-part examples: \"345678\" (contains anywhere in fuzzy mode), \"07000111000\" (exact if match=exact). Multi-part examples for type=number + fuzzy: \"079,5050\" (starts with 079 and contains 5050), \"079,5050,79\" (starts with 079, contains 5050, ends with 79), \"077,,999\" (starts with 077 and ends with 999), \",47,2229\" (contains 47 and ends with 2229). Multi-part allows max 3 parts (max 2 commas). Max length per part is 11 digits. Only numbers and commas are supported inputs.",
             "required": false,
             "type": "string"
           },
           {
             "name": "type",
             "in": "query",
-            "description": "Determines the target field for your search. By default, set to 'number', which searches across the entire mobile number for matches.",
+            "description": "Determines the target field for your search. Defaults to number. Comma-separated multi-part search is supported only when type=number.",
             "required": false,
             "type": "string",
             "enum": [
@@ -62,7 +62,7 @@
           {
             "name": "match",
             "in": "query",
-            "description": "Specifies the match type: select 'exact' for precise matching. By default, set to 'fuzzy' which performs a fuzzy match.",
+            "description": "Match mode. exact performs precise equality for single-part search. fuzzy performs contains matching. Comma-separated multi-part search is supported only in fuzzy mode.",
             "required": false,
             "type": "string",
             "enum": [

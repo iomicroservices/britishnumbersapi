@@ -101,19 +101,74 @@ function stripSpaces(value) {
     return normalized === '' ? null : normalized;
 }
 
+function parseSearchParts(search) {
+    const parts = search.split(',');
+    // Allow omitted trailing part(s), e.g. "077,999," -> ["077","999"]
+    while (parts.length > 0 && parts[parts.length - 1] === '') {
+        parts.pop();
+    }
+    return parts;
+}
+
 // Validation rules: each returns an error message or null
 const VALIDATIONS = {
     type: (params) =>
         params.type !== 'number' && params.type !== 'prefix' && params.type !== 'last_six'
             ? 'type: must be number, prefix, or last_six. Omit to default to number.'
             : null,
-    searchDigits: (params) =>
-        params.search !== null && !/^\d+$/.test(params.search)
+    searchDigits: (params) => {
+        if (params.search === null) return null;
+
+        const isMultiPart = params.search.includes(',');
+        if (isMultiPart) {
+            const commaCount = (params.search.match(/,/g) || []).length;
+            if (commaCount > 2) {
+                return 'search: only up to 3 parts (maximum 2 commas) are allowed.';
+            }
+            if (params.type !== 'number') {
+                return 'search: comma-separated multi-part search is only supported when type is number.';
+            }
+            if (params.match === 'exact') {
+                return 'search: comma-separated multi-part search is only supported when match is fuzzy.';
+            }
+
+            const parts = parseSearchParts(params.search);
+            if (parts.length < 2 || parts.length > 3) {
+                return 'search: multi-part format must be start,contains or start,contains,end.';
+            }
+            if (parts.length === 2) {
+                if (parts[0] === '' || parts[1] === '') {
+                    return 'search: multi-part format must be start,contains or start,contains,end.';
+                }
+            } else {
+                // 3-part mode:
+                // - start may be empty: ",contains,end"
+                // - contains may be empty: "start,,end"
+                // - end is required to avoid ambiguous trailing comma variants.
+                if (parts[2] === '') {
+                    return 'search: multi-part format must be start,contains,end (start/contains may be empty, end is required).';
+                }
+            }
+            if (parts.some((p) => p !== '' && !/^\d+$/.test(p))) {
+                return 'search: each multi-part segment must contain only digits (0-9).';
+            }
+            return null;
+        }
+
+        return !/^\d+$/.test(params.search)
             ? 'search: must contain only digits (0-9).'
-            : null,
+            : null;
+    },
     searchLength: (params) => {
         if (params.search === null) return null;
         if (params.type !== 'number' && params.type !== 'prefix' && params.type !== 'last_six') return null;
+        if (params.search.includes(',')) {
+            const parts = parseSearchParts(params.search);
+            if (parts.some((p) => p.length > 11)) {
+                return 'search: each multi-part segment must be at most 11 characters.';
+            }
+            return null;
+        }
         // Global max 11 chars; stricter (6) for prefix/last_six
         const maxLen = (params.type === 'prefix' || params.type === 'last_six') ? 6 : 11;
         return params.search.length > maxLen ? `search: must be at most ${maxLen} characters for type ${params.type}.` : null;
@@ -184,10 +239,20 @@ function constructFilters({ type, search, price_gte, price_lte, match, delivery 
     if (!search) {
         // Browse mode: return catalogue regardless of match
         filters.push(`${type}.ilike.*`); // equivalent to match-all
-    } else if (match === 'exact') {
-        filters.push(`${type}.eq.${search}`);
     } else {
-        filters.push(`${type}.ilike.*${search}*`);
+        const parts = parseSearchParts(search);
+        if (parts.length > 1) {
+            const [startPart, containsPart, endPart] = parts;
+            if (startPart) filters.push(`number.ilike.${startPart}*`);
+            if (containsPart) filters.push(`number.ilike.*${containsPart}*`);
+            if (parts.length === 3 && endPart) {
+                filters.push(`number.ilike.*${endPart}`);
+            }
+        } else if (match === 'exact') {
+            filters.push(`${type}.eq.${search}`);
+        } else {
+            filters.push(`${type}.ilike.*${search}*`);
+        }
     }
 
     // Construct the price filter
