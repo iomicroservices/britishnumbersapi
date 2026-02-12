@@ -194,8 +194,8 @@
             "examples": {
               "application/json": {
                 "status": 403,
-                "error": "INVALID_PARTNER",
-                "message": "The API key is not authorised for the specified partner."
+                "error": "FORBIDDEN",
+                "message": "The API key is not authorised for the specified partner. Please contact support."
               }
             }
           },

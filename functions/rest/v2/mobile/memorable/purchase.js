@@ -5,6 +5,77 @@ async function sha256Hex(input) {
     return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+const jsonHeaders = { 'Content-Type': 'application/json' };
+
+// Authenticate partner using X-API-Key header
+async function authenticatePartner(request, env) {
+    const rawKey = request.headers.get('X-API-Key');
+    if (!rawKey) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({
+                status: 401,
+                error: 'MISSING_API_KEY',
+                message: 'Unauthorized: request was not successful because it lacks valid authentication credentials for the requested resource.',
+            }), {
+                status: 401,
+                headers: jsonHeaders,
+            }),
+        };
+    }
+
+    const keyHash = await sha256Hex(rawKey);
+    const baseURL = env.DATABASE_BASE_URL;
+    const databaseApiKey = env.DATABASE_API_KEY;
+    const rpcUrl = new URL(`${baseURL}/rest/v1/rpc/verify_partner_api_key`);
+
+    const headers = new Headers();
+    headers.set('apikey', databaseApiKey);
+    headers.set('Authorization', `Bearer ${databaseApiKey}`);
+    headers.set('Content-Type', 'application/json');
+    headers.set('Accept', 'application/json');
+
+    const r = await fetch(rpcUrl.toString(), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ p_key_hash: keyHash }),
+    });
+
+    if (!r.ok) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({
+                status: 401,
+                error: 'UNAUTHORIZED',
+                message: 'The credentials provided are not valid for the specified partner. Please contact support.',
+            }), {
+                status: 401,
+                headers: jsonHeaders,
+            }),
+        };
+    }
+
+    const rpcResult = await r.json();
+    const row = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
+    const partnerId = typeof row === 'string' ? row : row?.partner_id ?? null;
+
+    if (!partnerId) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({
+                status: 401,
+                error: 'INVALID_API_KEY',
+                message: 'Unauthorized: The API key provided is invalid or inactive.',
+            }), {
+                status: 401,
+                headers: jsonHeaders,
+            }),
+        };
+    }
+
+    return { ok: true, partnerId };
+}
+
 // Enforce body limit helper function
 function enforceBodyLimit(request) {
     const len = Number(request.headers.get('Content-Length'));
@@ -122,8 +193,6 @@ function validatePurchaseParams(params) {
     return errors;
 }
 
-const jsonHeaders = { 'Content-Type': 'application/json' };
-
 // GET not supported; use POST with JSON body or application/x-www-form-urlencoded.
 export async function onRequestGet() {
     return new Response(
@@ -137,6 +206,9 @@ export async function onRequestGet() {
 }
 
 export async function onRequestPost(context) {
+    const auth = await authenticatePartner(context.request, context.env);
+    if (!auth.ok) return auth.response;
+
     // 🔒 Enforce body size limit early
     const bodyLimitResponse = enforceBodyLimit(context.request);
     if (bodyLimitResponse) return bodyLimitResponse;
@@ -152,6 +224,26 @@ export async function onRequestPost(context) {
     }
     if (!params) {
         return new Response(JSON.stringify({ status: 415, error: 'UNSUPPORTED_MEDIA_TYPE', message: 'Content-Type must be application/json or application/x-www-form-urlencoded.' }), { status: 415, headers: jsonHeaders });
+    }
+    if (params.partnerId == null || params.partnerId === '') {
+        return new Response(
+            JSON.stringify({
+                status: 403,
+                error: 'FORBIDDEN',
+                message: 'partnerId is required and must match the authenticated API key.',
+            }),
+            { status: 403, headers: jsonHeaders }
+        );
+    }
+    if (params.partnerId !== auth.partnerId) {
+        return new Response(
+            JSON.stringify({
+                status: 403,
+                error: 'FORBIDDEN',
+                message: 'The API key is not authorised for the specified partner.',
+            }),
+            { status: 403, headers: jsonHeaders }
+        );
     }
     if (Array.isArray(params.items) && params.items.length > 100) {
         return new Response(

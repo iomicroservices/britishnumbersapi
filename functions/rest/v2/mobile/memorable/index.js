@@ -13,7 +13,11 @@ async function authenticatePartner(request, env) {
     if (!rawKey) {
         return {
             ok: false,
-            response: new Response(JSON.stringify({ error: 'MISSING_API_KEY' }), {
+            response: new Response(JSON.stringify({
+                status: 401,
+                error: 'MISSING_API_KEY',
+                message: "Unauthorized: request was not successful because it lacks valid authentication credentials for the requested resource.",
+            }), {
                 status: 401,
                 headers: jsonHeaders,
             }),
@@ -27,42 +31,59 @@ async function authenticatePartner(request, env) {
     // ✅ IMPORTANT: this must be your Supabase Service Role key (server-only)
     const databaseApiKey = env.DATABASE_API_KEY;
 
-    const u = new URL(`${baseURL}/rest/v1/partner_api_keys`);
-    u.searchParams.set('select', 'partner_id');
-    u.searchParams.set('key_hash', `eq.${keyHash}`);
-    u.searchParams.set('is_active', 'eq.true');
-    u.searchParams.set('limit', '1');
+    const u = new URL(`${baseURL}/rest/v1/rpc/verify_partner_api_key`);
 
     const headers = new Headers();
     headers.set('apikey', databaseApiKey);
     headers.set('Authorization', `Bearer ${databaseApiKey}`);
+    headers.set('Content-Type', 'application/json');
+    headers.set('Accept', 'application/json');
 
-    const r = await fetch(u.toString(), { method: 'GET', headers });
+    const r = await fetch(u.toString(), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ p_key_hash: keyHash }),
+    });
 
     if (!r.ok) {
-        console.error('Auth lookup failed:', r.status, await r.text().catch(() => ''));
         return {
             ok: false,
-            response: new Response(JSON.stringify({ error: 'AUTH_LOOKUP_FAILED' }), {
-                status: 502,
+            response: new Response(JSON.stringify({
+                status: 401,
+                error: 'UNAUTHORIZED',
+                message: "Authentication failed. Please try again.",
+            }), {
+                status: 401,
                 headers: jsonHeaders,
             }),
         };
     }
-    const rows = await r.json();
-    const row = rows?.[0];
+    const rpcResult = await r.json();
+    // Accept common PostgREST RPC return shapes:
+    // 1) [{ partner_id: "..." }]
+    // 2) { partner_id: "..." }
+    // 3) "..." (partner_id as text)
+    const row = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
+    const partnerId =
+        typeof row === 'string'
+            ? row
+            : row?.partner_id ?? null;
 
-    if (!row?.partner_id) {
+    if (!partnerId) {
         return {
             ok: false,
-            response: new Response(JSON.stringify({ error: 'INVALID_API_KEY' }), {
+            response: new Response(JSON.stringify({
+                status: 401,
+                error: 'UNAUTHORIZED',
+                message: "The credentials provided are not valid for the specified partner. Please contact support.",
+            }), {
                 status: 401,
                 headers: jsonHeaders,
             }),
         };
     }
 
-    return { ok: true, partnerId: row.partner_id };
+    return { ok: true, partnerId };
 }
 
 // Helper function to set headers
@@ -74,11 +95,17 @@ function setBaseHeaders(baseHeaders, range, databaseApiKey) {
     return baseHeaders;
 }
 
+function stripSpaces(value) {
+    if (value == null) return null;
+    const normalized = String(value).replace(/\s+/g, '');
+    return normalized === '' ? null : normalized;
+}
+
 // Validation rules: each returns an error message or null
 const VALIDATIONS = {
     type: (params) =>
         params.type !== 'number' && params.type !== 'prefix' && params.type !== 'last_six'
-            ? 'type: must be "number", "prefix", or "last_six". Omit to default to "number".'
+            ? 'type: must be number, prefix, or last_six. Omit to default to number.'
             : null,
     searchDigits: (params) =>
         params.search !== null && !/^\d+$/.test(params.search)
@@ -89,11 +116,11 @@ const VALIDATIONS = {
         if (params.type !== 'number' && params.type !== 'prefix' && params.type !== 'last_six') return null;
         // Global max 11 chars; stricter (6) for prefix/last_six
         const maxLen = (params.type === 'prefix' || params.type === 'last_six') ? 6 : 11;
-        return params.search.length > maxLen ? `search: must be at most ${maxLen} characters for type "${params.type}".` : null;
+        return params.search.length > maxLen ? `search: must be at most ${maxLen} characters for type ${params.type}.` : null;
     },
     match: (params) =>
         params.match !== null && params.match !== '' && params.match !== 'exact' && params.match !== 'fuzzy'
-            ? 'match: must be "exact" or "fuzzy". Omit to default to "fuzzy".'
+            ? 'match: must be exact or fuzzy. Omit to default to fuzzy.'
             : null,
     isValidPrice: (price) => {
         return price && price.length <= 15 && /^\d+(\.\d{1,2})?$/.test(price);
@@ -175,25 +202,29 @@ function constructFilters({ type, search, price_gte, price_lte, match, delivery 
 
 // Main function
 export async function onRequestGet(context) {
-    const baseURL = context.env.DATABASE_BASE_URL;
-    const url = new URL(context.request.url);
-    const databaseApiKey = context.env.DATABASE_API_KEY;
-    const sourceUrl = context.request.headers.get('Referer') || 'unknown';
 
     // ✅ NEW: authenticate partner at the very start
     const auth = await authenticatePartner(context.request, context.env);
     if (!auth.ok) return auth.response;
-    const partnerId = auth.partnerId;
+
+    // Create request context object with reusable variables
+    const reqCtx = {
+        partnerId: auth.partnerId,
+        sourceUrl: context.request.headers.get('Referer') || 'unknown',
+        baseURL: context.env.DATABASE_BASE_URL,
+        databaseApiKey: context.env.DATABASE_API_KEY,
+        url: new URL(context.request.url),
+    };
 
     // Extract query parameters
     const params = {
-        type: url.searchParams.get('type') || 'number',
-        search: url.searchParams.get('search') || null,
-        match: url.searchParams.get('match') || null,
-        price_gte: url.searchParams.get('price_gte') || null,
-        price_lte: url.searchParams.get('price_lte') || null,
-        range: url.searchParams.get('range') || null,
-        delivery: url.searchParams.get('delivery') || null,
+        type: stripSpaces(reqCtx.url.searchParams.get('type')) || 'number',
+        search: stripSpaces(reqCtx.url.searchParams.get('search')),
+        match: stripSpaces(reqCtx.url.searchParams.get('match')),
+        price_gte: stripSpaces(reqCtx.url.searchParams.get('price_gte')),
+        price_lte: stripSpaces(reqCtx.url.searchParams.get('price_lte')),
+        range: stripSpaces(reqCtx.url.searchParams.get('range')),
+        delivery: stripSpaces(reqCtx.url.searchParams.get('delivery')),
     };
 
     const errors = validateParams(params);
@@ -208,23 +239,23 @@ export async function onRequestGet(context) {
         );
     }
 
-    // Construct filters for the API call
-    const filters = constructFilters(params);
-
     // Check if the base URL or API key is not set
-    if (!baseURL || !databaseApiKey) {
+    if (!reqCtx.baseURL || !reqCtx.databaseApiKey) {
         return new Response(JSON.stringify({ error: 'Service misconfigured' }), { status: 500, headers: jsonHeaders });
     }
 
+    // Construct filters for the API call
+    const filters = constructFilters(params);
+
     // Construct the API URL safely (handles URL encoding)
-    const supabaseUrl = new URL(`${baseURL}/rest/v1/mobile_numbers`);
+    const supabaseUrl = new URL(`${reqCtx.baseURL}/rest/v1/mobile_numbers`);
     supabaseUrl.searchParams.set('select', '*');
     supabaseUrl.searchParams.set('and', `(${filters.join(',')})`);
     const destinationURL = supabaseUrl.toString();
 
     // Construct the API headers
     const baseHeaders = new Headers();
-    setBaseHeaders(baseHeaders, params.range, databaseApiKey); // Set headers with the range if exists
+    setBaseHeaders(baseHeaders, params.range, reqCtx.databaseApiKey); // Set headers with the range if exists
 
     try {
         const firstResponse = await fetch(destinationURL, {
@@ -264,27 +295,27 @@ export async function onRequestGet(context) {
             count: totalCount,
             range_submitted: params.range,
             range_effective: rangeEffective,
-            source: sourceUrl,
+            source: reqCtx.sourceUrl,
             mobile: 1,
             landline: 0,
             match: matchValue,
-            partner_id: partnerId,
+            partner_id: reqCtx.partnerId,
         });
 
         // LEGACY DEPRECATED: Log the search query to the search_queries table
         // if (context.waitUntil) {
-        //     context.waitUntil(fetch(`${baseURL}/rest/v1/search_queries`, { method: 'POST', headers: logHeaders, body: logBody }));
+        //     context.waitUntil(fetch(`${reqCtx.baseURL}/rest/v1/search_queries`, { method: 'POST', headers: logHeaders, body: logBody }));
         // } else {
-        //     fetch(`${baseURL}/rest/v1/search_queries`, { method: 'POST', headers: logHeaders, body: logBody });
+        //     fetch(`${reqCtx.baseURL}/rest/v1/search_queries`, { method: 'POST', headers: logHeaders, body: logBody });
         // }
 
         // ✅ OPTIONAL: increment daily usage (RPC) in the same waitUntil
         const today = new Date().toISOString().slice(0, 10);
-        const incUrl = new URL(`${baseURL}/rest/v1/rpc/increment_api_usage`);
-        const incBody = JSON.stringify({ p_partner: partnerId, p_day: today });
+        const incUrl = new URL(`${reqCtx.baseURL}/rest/v1/rpc/increment_api_usage`);
+        const incBody = JSON.stringify({ p_partner: reqCtx.partnerId, p_day: today });
 
         const bgTasks = Promise.all([
-            fetch(`${baseURL}/rest/v1/search_queries`, {
+            fetch(`${reqCtx.baseURL}/rest/v1/search_queries`, {
                 method: 'POST',
                 headers: logHeaders,
                 body: logBody,
