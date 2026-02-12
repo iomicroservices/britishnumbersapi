@@ -1,3 +1,10 @@
+// Use SHA-256 via WebCrypto (available in Workers)
+async function sha256Hex(input) {
+    const data = new TextEncoder().encode(input);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Enforce body limit helper function
 function enforceBodyLimit(request) {
     const len = Number(request.headers.get('Content-Length'));

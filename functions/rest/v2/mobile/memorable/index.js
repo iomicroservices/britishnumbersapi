@@ -1,6 +1,73 @@
+// Use SHA-256 via WebCrypto (available in Workers)
+async function sha256Hex(input) {
+    const data = new TextEncoder().encode(input);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+const jsonHeaders = { 'Content-Type': 'application/json' };
+
+// Authenticate partner using X-API-Key header
+async function authenticatePartner(request, env) {
+    const rawKey = request.headers.get('X-API-Key');
+    if (!rawKey) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: 'MISSING_API_KEY' }), {
+                status: 401,
+                headers: jsonHeaders,
+            }),
+        };
+    }
+
+    const keyHash = await sha256Hex(rawKey);
+
+    const baseURL = env.DATABASE_BASE_URL;
+
+    // ✅ IMPORTANT: this must be your Supabase Service Role key (server-only)
+    const databaseApiKey = env.DATABASE_API_KEY;
+
+    const u = new URL(`${baseURL}/rest/v1/partner_api_keys`);
+    u.searchParams.set('select', 'partner_id');
+    u.searchParams.set('key_hash', `eq.${keyHash}`);
+    u.searchParams.set('is_active', 'eq.true');
+    u.searchParams.set('limit', '1');
+
+    const headers = new Headers();
+    headers.set('apikey', databaseApiKey);
+    headers.set('Authorization', `Bearer ${databaseApiKey}`);
+
+    const r = await fetch(u.toString(), { method: 'GET', headers });
+
+    if (!r.ok) {
+        console.error('Auth lookup failed:', r.status, await r.text().catch(() => ''));
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: 'AUTH_LOOKUP_FAILED' }), {
+                status: 502,
+                headers: jsonHeaders,
+            }),
+        };
+    }
+    const rows = await r.json();
+    const row = rows?.[0];
+
+    if (!row?.partner_id) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: 'INVALID_API_KEY' }), {
+                status: 401,
+                headers: jsonHeaders,
+            }),
+        };
+    }
+
+    return { ok: true, partnerId: row.partner_id };
+}
+
 // Helper function to set headers
 function setBaseHeaders(baseHeaders, range, databaseApiKey) {
-    baseHeaders.set('apiKey', databaseApiKey);
+    baseHeaders.set('apikey', databaseApiKey);
     baseHeaders.set('Authorization', `Bearer ${databaseApiKey}`);
     if (range) baseHeaders.set('Range', range);
     baseHeaders.set('Prefer', 'count=exact');
@@ -106,14 +173,17 @@ function constructFilters({ type, search, price_gte, price_lte, match, delivery 
     return filters;
 }
 
-const jsonHeaders = { 'Content-Type': 'application/json' };
-
 // Main function
 export async function onRequestGet(context) {
     const baseURL = context.env.DATABASE_BASE_URL;
     const url = new URL(context.request.url);
     const databaseApiKey = context.env.DATABASE_API_KEY;
     const sourceUrl = context.request.headers.get('Referer') || 'unknown';
+
+    // ✅ NEW: authenticate partner at the very start
+    const auth = await authenticatePartner(context.request, context.env);
+    if (!auth.ok) return auth.response;
+    const partnerId = auth.partnerId;
 
     // Extract query parameters
     const params = {
@@ -145,9 +215,6 @@ export async function onRequestGet(context) {
     if (!baseURL || !databaseApiKey) {
         return new Response(JSON.stringify({ error: 'Service misconfigured' }), { status: 500, headers: jsonHeaders });
     }
-    // LEGACY DEPRECATED: Construct the API URL
-    // const query = `&and=(${filters.join(',')})`;
-    // const destinationURL = `${baseURL}/rest/v1/mobile_numbers?select=*${query}`;
 
     // Construct the API URL safely (handles URL encoding)
     const supabaseUrl = new URL(`${baseURL}/rest/v1/mobile_numbers`);
@@ -201,11 +268,39 @@ export async function onRequestGet(context) {
             mobile: 1,
             landline: 0,
             match: matchValue,
+            partner_id: partnerId,
         });
+
+        // LEGACY DEPRECATED: Log the search query to the search_queries table
+        // if (context.waitUntil) {
+        //     context.waitUntil(fetch(`${baseURL}/rest/v1/search_queries`, { method: 'POST', headers: logHeaders, body: logBody }));
+        // } else {
+        //     fetch(`${baseURL}/rest/v1/search_queries`, { method: 'POST', headers: logHeaders, body: logBody });
+        // }
+
+        // ✅ OPTIONAL: increment daily usage (RPC) in the same waitUntil
+        const today = new Date().toISOString().slice(0, 10);
+        const incUrl = new URL(`${baseURL}/rest/v1/rpc/increment_api_usage`);
+        const incBody = JSON.stringify({ p_partner: partnerId, p_day: today });
+
+        const bgTasks = Promise.all([
+            fetch(`${baseURL}/rest/v1/search_queries`, {
+                method: 'POST',
+                headers: logHeaders,
+                body: logBody,
+            }),
+            fetch(incUrl.toString(), {
+                method: 'POST',
+                headers: logHeaders,
+                body: incBody,
+            }),
+        ]).catch((e) => console.error('Background logging failed:', e));
+
         if (context.waitUntil) {
-            context.waitUntil(fetch(`${baseURL}/rest/v1/search_queries`, { method: 'POST', headers: logHeaders, body: logBody }));
+            context.waitUntil(bgTasks);
         } else {
-            fetch(`${baseURL}/rest/v1/search_queries`, { method: 'POST', headers: logHeaders, body: logBody });
+            // fallback (still fire-and-forget)
+            bgTasks;
         }
 
         // Return the response from the first API call
