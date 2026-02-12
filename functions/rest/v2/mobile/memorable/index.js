@@ -101,6 +101,31 @@ function stripSpaces(value) {
     return normalized === '' ? null : normalized;
 }
 
+function toKeypadDigits(value) {
+    if (value == null) return null;
+    const keypadMap = {
+        A: '2', B: '2', C: '2',
+        D: '3', E: '3', F: '3',
+        G: '4', H: '4', I: '4',
+        J: '5', K: '5', L: '5',
+        M: '6', N: '6', O: '6',
+        P: '7', Q: '7', R: '7', S: '7',
+        T: '8', U: '8', V: '8',
+        W: '9', X: '9', Y: '9', Z: '9',
+    };
+    return String(value)
+        .toUpperCase()
+        .replace(/[A-Z]/g, (ch) => keypadMap[ch]);
+}
+
+function normalizeSearch(value) {
+    const noSpaces = stripSpaces(value);
+    if (noSpaces == null) return null;
+    // Fast path: skip keypad conversion when no letters exist.
+    if (!/[A-Za-z]/.test(noSpaces)) return noSpaces;
+    return toKeypadDigits(noSpaces);
+}
+
 function parseSearchParts(search) {
     const parts = search.split(',');
     // Allow omitted trailing part(s), e.g. "077,999," -> ["077","999"]
@@ -126,31 +151,18 @@ const VALIDATIONS = {
                 return 'search: only up to 3 parts (maximum 2 commas) are allowed.';
             }
             if (params.type !== 'number') {
-                return 'search: comma-separated multi-part search is only supported when type is number.';
+                return 'search: comma-separated multi-part search is only supported when type is number or omitted.';
             }
             if (params.match === 'exact') {
-                return 'search: comma-separated multi-part search is only supported when match is fuzzy.';
+                return 'search: comma-separated multi-part search is only supported when match is fuzzy or omitted.';
             }
 
             const parts = parseSearchParts(params.search);
-            if (parts.length < 2 || parts.length > 3) {
-                return 'search: multi-part format must be start,contains or start,contains,end.';
-            }
-            if (parts.length === 2) {
-                if (parts[0] === '' || parts[1] === '') {
-                    return 'search: multi-part format must be start,contains or start,contains,end.';
-                }
-            } else {
-                // 3-part mode:
-                // - start may be empty: ",contains,end"
-                // - contains may be empty: "start,,end"
-                // - end is required to avoid ambiguous trailing comma variants.
-                if (parts[2] === '') {
-                    return 'search: multi-part format must be start,contains,end (start/contains may be empty, end is required).';
-                }
+            if (parts.length < 1) {
+                return 'search: multi-part format must include at least 1 populated part and no more than 3 parts (maximum 2 commas).';
             }
             if (parts.some((p) => p !== '' && !/^\d+$/.test(p))) {
-                return 'search: each multi-part segment must contain only digits (0-9).';
+                return 'search: each multi-part segment supports digits and letters. Keypad conversion is implemented on letters (letters A-Z are converted to 2-9). Must only contain digits (0-9), letters (A-Z) and upto 2 commas.';
             }
             return null;
         }
@@ -240,8 +252,21 @@ function constructFilters({ type, search, price_gte, price_lte, match, delivery 
         // Browse mode: return catalogue regardless of match
         filters.push(`${type}.ilike.*`); // equivalent to match-all
     } else {
+        const isMultiPart = search.includes(',');
         const parts = parseSearchParts(search);
-        if (parts.length > 1) {
+        if (isMultiPart) {
+            if (parts.length === 1) {
+                // "start," => starts-with only
+                filters.push(`number.ilike.${parts[0]}*`);
+            } else {
+                const [startPart, containsPart, endPart] = parts;
+                if (startPart) filters.push(`number.ilike.${startPart}*`);
+                if (containsPart) filters.push(`number.ilike.*${containsPart}*`);
+                if (parts.length === 3 && endPart) {
+                    filters.push(`number.ilike.*${endPart}`);
+                }
+            }
+        } else if (parts.length > 1) {
             const [startPart, containsPart, endPart] = parts;
             if (startPart) filters.push(`number.ilike.${startPart}*`);
             if (containsPart) filters.push(`number.ilike.*${containsPart}*`);
@@ -284,7 +309,7 @@ export async function onRequestGet(context) {
     // Extract query parameters
     const params = {
         type: stripSpaces(reqCtx.url.searchParams.get('type')) || 'number',
-        search: stripSpaces(reqCtx.url.searchParams.get('search')),
+        search: normalizeSearch(reqCtx.url.searchParams.get('search')),
         match: stripSpaces(reqCtx.url.searchParams.get('match')),
         price_gte: stripSpaces(reqCtx.url.searchParams.get('price_gte')),
         price_lte: stripSpaces(reqCtx.url.searchParams.get('price_lte')),
