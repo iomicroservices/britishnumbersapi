@@ -28,6 +28,7 @@
             "in": "query",
             "description": "Flexible memorable-number search.\n\nRules:\n- Accepts digits, letters, or mixed input.\n- Letters are converted to phone keypad digits before filtering (ABC->2, DEF->3, GHI->4, JKL->5, MNO->6, PQRS->7, TUV->8, WXYZ->9).\n- Multi-part mode uses commas and is only valid when `type=number` and `match=fuzzy` (or both omitted).\n- Up to 3 parts (max 2 commas); each part max 11 characters after conversion.\n\nPart behavior:\n- 1 part: contains (fuzzy) or exact equality (exact mode).\n- 2 parts: `start,contains`.\n- 3 parts: `start,contains,end` with optional blank start/contains (e.g. `077,,999` or `,47,2229`).\n\nInvalid:\n- More than 2 commas.\n- Empty search (e.g. `,,`).\n- Unsupported symbols (anything except letters, digits, commas).",
             "required": false,
+            "allowReserved": true,
             "schema": {
               "type": "string",
               "pattern": "^[A-Za-z0-9,]+$"
@@ -98,6 +99,10 @@
               "last_six": {
                 "summary": "Search last 6 digits",
                 "value": "last_six"
+              },
+              "null": {
+                "summary": "Null (blank)",
+                "value": null
               }
             }
           },
@@ -112,13 +117,17 @@
               "fuzzy"
             ],
             "examples": {
+              "fuzzy": {
+                "summary": "Fuzzy match",
+                "value": "fuzzy"
+              },
               "exact": {
                 "summary": "Exact match",
                 "value": "exact"
               },
-              "fuzzy": {
-                "summary": "Fuzzy match",
-                "value": "fuzzy"
+              "null": {
+                "summary": "Null (blank)",
+                "value": null
               }
             }
           },
@@ -133,6 +142,10 @@
               7
             ],
             "examples": {
+              "null": {
+                "summary": "Null (blank)",
+                "value": null
+              },
               "oneDay": {
                 "summary": "1 day delivery",
                 "value": 1
