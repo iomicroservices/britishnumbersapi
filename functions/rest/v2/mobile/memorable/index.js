@@ -305,6 +305,7 @@ export async function onRequestGet(context) {
         databaseApiKey: context.env.DATABASE_API_KEY,
         url: new URL(context.request.url),
     };
+    const searchSubmitted = reqCtx.url.searchParams.get('search');
 
     // Extract query parameters
     const params = {
@@ -376,20 +377,26 @@ export async function onRequestGet(context) {
 
         // Log search in background so response returns immediately (no await)
         const matchValue = params.match === 'exact' ? 'exact' : 'fuzzy';
-        const logHeaders = new Headers(baseHeaders);
-        logHeaders.set('Content-Type', 'application/json');
-        logHeaders.set('Prefer', 'return=minimal');
+        // Use dedicated RPC headers (do not inherit Range/count headers from search call).
+        const rpcHeaders = new Headers();
+        rpcHeaders.set('apikey', reqCtx.databaseApiKey);
+        rpcHeaders.set('Authorization', `Bearer ${reqCtx.databaseApiKey}`);
+        rpcHeaders.set('Content-Type', 'application/json');
+        rpcHeaders.set('Accept', 'application/json');
+        rpcHeaders.set('Prefer', 'return=minimal');
+        const logUrl = new URL(`${reqCtx.baseURL}/rest/v1/rpc/log_search_query`);
         const logBody = JSON.stringify({
-            search: params.search,
-            type: params.type,
-            count: totalCount,
-            range_submitted: params.range,
-            range_effective: rangeEffective,
-            source: reqCtx.sourceUrl,
-            mobile: 1,
-            landline: 0,
-            match: matchValue,
-            partner_id: reqCtx.partnerId,
+            p_partner: reqCtx.partnerId,
+            p_search_submitted: searchSubmitted,
+            p_search_effective: params.search,
+            p_type: params.type,
+            p_count: totalCount,
+            p_range_submitted: params.range,
+            p_range_effective: rangeEffective,
+            p_source: reqCtx.sourceUrl,
+            p_mobile: true,
+            p_landline: false,
+            p_match: matchValue,
         });
 
         // LEGACY DEPRECATED: Log the search query to the search_queries table
@@ -405,23 +412,32 @@ export async function onRequestGet(context) {
         const incBody = JSON.stringify({ p_partner: reqCtx.partnerId, p_day: today });
 
         const bgTasks = Promise.all([
-            fetch(`${reqCtx.baseURL}/rest/v1/search_queries`, {
+            fetch(logUrl.toString(), {
                 method: 'POST',
-                headers: logHeaders,
+                headers: rpcHeaders,
                 body: logBody,
             }),
             fetch(incUrl.toString(), {
                 method: 'POST',
-                headers: logHeaders,
+                headers: rpcHeaders,
                 body: incBody,
             }),
-        ]).catch((e) => console.error('Background logging failed:', e));
+        ])
+            .then(async ([logRes, incRes]) => {
+                if (!logRes.ok) {
+                    console.error('log_search_query RPC failed:', logRes.status);
+                }
+                if (!incRes.ok) {
+                    console.error('increment_api_usage RPC failed:', incRes.status);
+                }
+            })
+            .catch((e) => console.error('Background logging failed:', e));
 
         if (context.waitUntil) {
             context.waitUntil(bgTasks);
         } else {
-            // fallback (still fire-and-forget)
-            bgTasks;
+            // Fallback: await to avoid dropping tasks when waitUntil is unavailable.
+            await bgTasks;
         }
 
         // Return the response from the first API call
