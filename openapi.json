@@ -322,7 +322,7 @@
         "tags": [
           "Mobile Numbers"
         ],
-        "summary": "Buy memorable mobile numbers",
+        "summary": "Request purchase of memorable mobile numbers",
         "description": "Submit a purchase request to buy one or more selected memorable mobile numbers directly through the API.",
         "operationId": "purchaseMemorableNumbers",
         "requestBody": {
