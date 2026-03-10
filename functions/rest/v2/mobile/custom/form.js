@@ -128,6 +128,12 @@ async function parsePostBody(request, url) {
         .toLowerCase();
 
     if (!contentType) {
+        const rawBody = await request.text();
+        if (rawBody && rawBody.includes("=")) {
+            const bodyParams = new URLSearchParams(rawBody);
+            const bodyObject = Object.fromEntries(bodyParams.entries());
+            return sanitizeIncoming(bodyObject, query);
+        }
         return sanitizeIncoming(null, query);
     }
 
