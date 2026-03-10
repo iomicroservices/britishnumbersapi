@@ -127,7 +127,18 @@ async function parsePostBody(request, url) {
         .trim()
         .toLowerCase();
 
-    if (!contentType || contentType === "application/x-www-form-urlencoded" || contentType === "text/plain") {
+    if (!contentType) {
+        return sanitizeIncoming(null, query);
+    }
+
+    if (contentType === "application/x-www-form-urlencoded") {
+        const bodyText = await request.text();
+        const bodyParams = new URLSearchParams(bodyText);
+        const bodyObject = Object.fromEntries(bodyParams.entries());
+        return sanitizeIncoming(bodyObject, query);
+    }
+
+    if (contentType === "text/plain") {
         return sanitizeIncoming(null, query);
     }
 
