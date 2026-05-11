@@ -190,7 +190,7 @@ export async function onRequest(context) {
     //   { partner_id, partner_api_key }
     //
     // Returns:
-    //   { partner_id, key_hash }
+    //   { partner_id, partner_api_key, key_hash }
     //
     // This does NOT write to Supabase.
 
@@ -213,7 +213,7 @@ export async function onRequest(context) {
             });
         }
 
-        if (partner_api_key.length < 16 || appartner_api_keyiKey.length > 200) {
+        if (partner_api_key.length < 16 || partner_api_key.length > 200) {
             return json(400, {
                 error: 'INVALID_PARAMS',
                 message: 'partner_api_key length looks invalid.',
@@ -265,7 +265,7 @@ export async function onRequest(context) {
 
         return json(200, {
             partner_id: pid.partner_id,
-            partner_api_key: pid.partner_api_key,
+            partner_api_key,
             key_hash,
         });
     }
