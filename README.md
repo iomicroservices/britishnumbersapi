@@ -86,4 +86,8 @@ Your code does not need to change: it already uses `context.env.VARIABLE_NAME`; 
 | 4 | Run `npx wrangler pages dev ./dist` |
 | 5 | Use http://localhost:8788 to test the API |
 
-No code changes are required to “use” env vars — they are already read from `context.env`; you only need to provide them via `.dev.vars` locally.
+No code changes are required to "use" env vars — they are already read from `context.env`; you only need to provide them via `.dev.vars` locally.
+
+## License
+
+This codebase is **proprietary**; all rights reserved. Terms that apply to use of the API and related materials are published in the [Terms of Service](https://api.britishnumbers.com/terms-of-service).
