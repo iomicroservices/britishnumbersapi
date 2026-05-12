@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "description": "The SUCK A NUT API gives you access to the largest database of UK mobile numbers available for sale. It's designed to make finding and buying numbers easy and straightforward for our partners.",
+    "description": "The British Numbers API gives you access to the largest database of UK mobile numbers available for sale. It's designed to make finding and buying numbers easy and straightforward for our partners.",
     "version": "2.0.1",
     "title": "British Numbers API",
     "termsOfService": "https://api.britishnumbers.com/terms-of-service",
