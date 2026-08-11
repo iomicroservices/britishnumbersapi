@@ -211,7 +211,7 @@ async function processFormSubmission(context, params) {
         );
     }
 
-    if (emailValidation.result !== "valid") {
+    if (emailValidation.result === "invalid") {
         return buildRedirectResponse(params.source, "invalid_email");
     }
 
